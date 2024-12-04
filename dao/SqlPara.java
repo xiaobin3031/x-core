@@ -87,6 +87,17 @@ public class SqlPara {
         return this;
     }
 
+    public SqlPara between(String col1, String col2, Object value) {
+        if (value != null) {
+            if (!this.whereBuilder.isEmpty()) {
+                this.whereBuilder.append(" and ");
+            }
+            this.whereBuilder.append(" ? between ").append(col1).append(" and ").append(col2);
+            this.values.add(value);
+        }
+        return this;
+    }
+
     public SqlPara isNull(String column) {
         this.append(column, "is null");
         return this;

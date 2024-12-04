@@ -1,4 +1,4 @@
-package com.xiaobin.core.json;
+package com.xiaobin.core.json.exception;
 
 /**
  * Created by XWB on 2024-08-03.
