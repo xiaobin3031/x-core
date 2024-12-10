@@ -1,14 +1,17 @@
 package com.xiaobin.core.toast;
 
 import com.xiaobin.core.json.JSON;
-import com.xiaobin.core.toast.model.ToastModel;
 import com.xiaobin.core.server.MyHttpHandler;
 import com.xiaobin.core.server.MyHttpServer;
+import com.xiaobin.core.toast.model.ToastModel;
 
 import javax.swing.*;
 import java.awt.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -19,6 +22,14 @@ public class Toast {
 
     private static JFrame TOAST_FRAME;
     private static JTextArea TOAST_MSG_TEXT_AREA;
+    private final static JLabel hourField = new JLabel();
+    private final static JLabel minuteField = new JLabel();
+    private final static JLabel secondField = new JLabel();
+    private final static JLabel ymdField = new JLabel();
+
+    private static int hour;
+    private static int minute;
+    private static int seconds;
 
     static {
         init();
@@ -32,34 +43,104 @@ public class Toast {
         jFrame.setSize(350, 200);
         jFrame.setLayout(new GridLayout(2, 1));
 
+        Container container = jFrame.getContentPane();
+        container.setLayout(new BorderLayout());
+
+        JPanel center = new JPanel();
+        center.setLayout(new BorderLayout());
         JTextArea msgTextArea = new JTextArea();
         msgTextArea.setText("11111");
         msgTextArea.setEditable(false);
         JScrollPane msgPanel = new JScrollPane(msgTextArea);
-        jFrame.add(msgPanel);
+        center.add(msgPanel, BorderLayout.CENTER);
 
+        JPanel btnPanel = initBtnPanel();
+        center.add(btnPanel, BorderLayout.SOUTH);
+        container.add(center, BorderLayout.CENTER);
+
+        JPanel toolBar = initToolbar();
+        container.add(toolBar, BorderLayout.SOUTH);
+        TOAST_MSG_TEXT_AREA = msgTextArea;
+        TOAST_FRAME = jFrame;
+    }
+
+    private static JPanel initBtnPanel() {
         JPanel btnPanel = new JPanel();
         JButton jClearBtn = new JButton("Clear");
         jClearBtn.addActionListener(e -> {
-            msgTextArea.setText("");
+            TOAST_MSG_TEXT_AREA.setText("");
         });
         btnPanel.add(jClearBtn);
         JButton jCancelBtn = new JButton("Cancel");
         jCancelBtn.addActionListener(e -> {
             System.out.println("click cancel");
-            jFrame.setVisible(false);
+            TOAST_FRAME.setVisible(false);
         });
         btnPanel.add(jCancelBtn);
         JButton jOkBtn = new JButton("Ok");
         jOkBtn.addActionListener(e -> {
             System.out.println("click ok");
-            jFrame.setVisible(false);
+            TOAST_FRAME.setVisible(false);
         });
         btnPanel.add(jOkBtn);
-        jFrame.add(btnPanel);
 
-        TOAST_MSG_TEXT_AREA = msgTextArea;
-        TOAST_FRAME = jFrame;
+        return btnPanel;
+    }
+
+    private static JPanel initToolbar() {
+        JPanel toolBar = new JPanel();
+        toolBar.setLayout(new FlowLayout(FlowLayout.LEFT));
+        refreshYmd();
+        toolBar.add(ymdField);
+        toolBar.add(hourField);
+        toolBar.add(new JLabel(":"));
+        toolBar.add(minuteField);
+        toolBar.add(new JLabel(":"));
+        toolBar.add(secondField);
+
+        Timer timer = new Timer();
+        LocalDateTime now = LocalDateTime.now();
+        hour = now.getHour();
+        minute = now.getMinute();
+        seconds = now.getSecond();
+        setTimeField(hourField, hour);
+        setTimeField(minuteField, minute);
+        setTimeField(secondField, seconds);
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                seconds++;
+                if (seconds >= 60) {
+                    seconds = 0;
+                    minute++;
+                    if (minute >= 60) {
+                        minute = 0;
+                        hour++;
+                        if (hour >= 24) {
+                            hour = 0;
+                            refreshYmd();
+                        }
+                        setTimeField(hourField, hour);
+                    }
+                    setTimeField(minuteField, minute);
+                }
+                setTimeField(secondField, seconds);
+            }
+        }, 1000, 1000);
+
+        return toolBar;
+    }
+
+    private static void refreshYmd() {
+        ymdField.setText(LocalDate.now().format(DateTimeFormatter.ISO_DATE) + " ");
+    }
+
+    private static void setTimeField(JLabel jLabel, int time) {
+        if (time < 10) {
+            jLabel.setText("0" + time);
+        } else {
+            jLabel.setText(time + "");
+        }
     }
 
     private final ToastModel model;

@@ -45,6 +45,7 @@ public class SqlFactory {
                 list.add(tt);
             }
         } catch (SQLException e) {
+            e.printStackTrace();
             System.err.println("load data error: " + e.getMessage());
         } finally {
             DbConfig.close(null, ps, rs);
@@ -70,11 +71,8 @@ public class SqlFactory {
         }
         Class<?> cls = t.getClass();
         Entity entity = this.checkEntity(cls);
-        String tableName = sqlPara.getTableName();
-        if (tableName == null || tableName.trim().isEmpty()) {
-            tableName = entity.tableName();
-        }
-        if (tableName == null || tableName.trim().isEmpty()) {
+        String tableName = this.getTableName(cls, entity, sqlPara);
+        if (tableName.trim().isEmpty()) {
             throw new RuntimeException("table is empty");
         }
         String schema = sqlPara.getSchema();
@@ -121,6 +119,7 @@ public class SqlFactory {
             this.setParam(ps, valueList, false);
             return ps.executeUpdate();
         } catch (SQLException e) {
+            e.printStackTrace();
             System.err.println("load data error: " + e.getMessage());
         } finally {
             DbConfig.close(null, ps, null);
@@ -131,11 +130,8 @@ public class SqlFactory {
     public int updateById(Object object, SqlPara sqlPara) {
         Class<?> cls = object.getClass();
         Entity entity = this.checkEntity(cls);
-        String tableName = sqlPara.getTableName();
-        if (tableName == null || tableName.trim().isEmpty()) {
-            tableName = entity.tableName();
-        }
-        if (tableName == null || tableName.trim().isEmpty()) {
+        String tableName = this.getTableName(cls, entity, sqlPara);
+        if (tableName.trim().isEmpty()) {
             throw new RuntimeException("table is empty");
         }
         String schema = sqlPara.getSchema();
@@ -196,7 +192,9 @@ public class SqlFactory {
             if (i > 1) {
                 connection.rollback();
             }
+            return i;
         } catch (SQLException e) {
+            e.printStackTrace();
             System.err.println("load data error: " + e.getMessage());
             try {
                 connection.rollback();
@@ -212,11 +210,8 @@ public class SqlFactory {
     public <T> int save(T t, SqlPara sqlPara) {
         Class<?> cls = t.getClass();
         Entity entity = this.checkEntity(cls);
-        String tableName = sqlPara.getTableName();
-        if (tableName == null || tableName.trim().isEmpty()) {
-            tableName = entity.tableName();
-        }
-        if (tableName == null || tableName.trim().isEmpty()) {
+        String tableName = this.getTableName(cls, entity, sqlPara);
+        if (tableName.trim().isEmpty()) {
             throw new RuntimeException("table is empty");
         }
         String schema = sqlPara.getSchema();
@@ -243,11 +238,14 @@ public class SqlFactory {
                 }
                 try {
                     Object invoke = method.invoke(t);
+                    boolean isIdAuto = false;
                     id = field.getDeclaredAnnotation(Id.class);
                     if (id != null && id.type() == Id.IdType.AUTO) {
                         idFieldName = name;
                         idFieldType = field.getType();
-                    } else {
+                        isIdAuto = true;
+                    }
+                    if (invoke != null && !isIdAuto) {
                         valueList.add(invoke);
                         columnList.add(this.fieldToColumn(name));
                     }
@@ -269,6 +267,7 @@ public class SqlFactory {
                 valueBuilder.append("?, ");
             }
             stringBuilder.setLength(stringBuilder.length() - 2);
+            stringBuilder.append(")");
             valueBuilder.setLength(valueBuilder.length() - 2);
             stringBuilder.append(" values(").append(valueBuilder).append(")");
             ps = connection.prepareStatement(stringBuilder.toString());
@@ -292,7 +291,9 @@ public class SqlFactory {
                     }
                 }
             }
+            return i;
         } catch (SQLException e) {
+            e.printStackTrace();
             System.err.println("load data error: " + e.getMessage());
             try {
                 connection.rollback();
@@ -322,7 +323,7 @@ public class SqlFactory {
     }
 
     private String fieldToColumn(String fieldName) {
-        return fieldName.substring(0, 1).toLowerCase() + fieldName.substring(1).replaceAll("[A-Z]", "_\1").toLowerCase();
+        return fieldName.substring(0, 1).toLowerCase() + fieldName.substring(1).replaceAll("([A-Z])", "_$1").toLowerCase();
     }
 
     private <T> T getBeanFromResultSet(Class<T> cls, ResultSet resultSet) {

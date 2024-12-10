@@ -31,9 +31,6 @@ public class SqlPara {
 
     public SqlPara(String tableName, String schema) {
         this.tableName = tableName;
-        if (tableName == null) {
-            throw new RuntimeException("table must not null");
-        }
         this.schema = schema;
     }
 

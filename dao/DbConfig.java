@@ -56,6 +56,16 @@ public class DbConfig {
             connection = CONNECTION_THREAD_LOCAL.get();
         }
 
+        if(connection != null){
+            try {
+                if (connection.isClosed()) {
+                    connection = null;
+                }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         if (connection == null) {
             try {
                 connection = DriverManager.getConnection(dbConnModel.getUrl(), dbConnModel.getUsername(), dbConnModel.getPassword());

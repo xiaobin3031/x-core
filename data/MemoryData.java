@@ -1,26 +1,28 @@
 package com.xiaobin.core.data;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * created by xuweibin at 2024/11/25 8:52
  */
-public class MemoryData<T> {
+public class MemoryData<T> extends BaseData<T> {
 
     private final Map<String, List<T>> ERROR_DATA_MAP = new HashMap<>();
+    private List<T> datas = new ArrayList<>();
 
-    public void add(String key, List<T> list) {
-        List<T> longs = ERROR_DATA_MAP.get(key);
-        if (longs != null) {
-            list.removeAll(longs);
-            longs.addAll(list);
-        } else {
-            longs = list;
-        }
-        ERROR_DATA_MAP.put(key, longs);
+    public MemoryData() {
+        super(false);
+    }
+
+    public MemoryData(String filename) {
+        super(true, filename);
+
+        this.datas = super.loadFromFile();
+    }
+
+    public void add(List<T> list) {
+        list.stream().filter(a -> !this.datas.contains(a)).forEach(this.datas::add);
+        super.storeToFile(this.datas);
     }
 
     public void add(String key, T id) {
@@ -34,16 +36,20 @@ public class MemoryData<T> {
         }
     }
 
-    public List<T> get(String key) {
-        return ERROR_DATA_MAP.getOrDefault(key, new ArrayList<>());
+    public void add(T id) {
+        if (!this.datas.contains(id)) {
+            this.datas.add(id);
+        }
     }
 
-    public List<T> remove(String key) {
-        return ERROR_DATA_MAP.remove(key);
+    public List<T> removeAndGetAll() {
+        List<T> list = new ArrayList<>(this.datas);
+        this.datas.clear();
+        super.storeToFile(this.datas);
+        return list;
     }
 
-    public boolean contains(String key, T id) {
-        List<T> longs = ERROR_DATA_MAP.get(key);
-        return longs != null && longs.contains(id);
+    public boolean contains(T id) {
+        return this.datas.contains(id);
     }
 }
