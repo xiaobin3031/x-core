@@ -732,7 +732,7 @@ public class JSON {
                 value = null;
                 if (b == DOUBLE_QUOTA) {
                     // string
-                    firstElement = this.checkAndGetElementType(firstElement, 1);
+                    firstElement = this.checkAndGetElementType(firstElement, 1, 4);
                     value = this.readString();
                 } else if (b == BEGIN_OBJECT) {
                     // object
@@ -749,7 +749,7 @@ public class JSON {
                     value = this.readListInner(clazz);
                 } else if (b == SIGN_PLUS || b == SIGN_MINUS || this.isDigit(b)) {
                     // number
-                    firstElement = this.checkAndGetElementType(firstElement, 4);
+                    firstElement = this.checkAndGetElementType(firstElement, 4, 1);
                     value = this.readNumber();
                 } else if (b == TRUE[0]) {
                     firstElement = this.checkAndGetElementType(firstElement, 5);
@@ -784,11 +784,20 @@ public class JSON {
         return list;
     }
 
-    private int checkAndGetElementType(int elementType, int exceptType) {
-        if (elementType != 0 && elementType != exceptType) {
-            throw new JSONParseException("类型不一致");
+    private int checkAndGetElementType(int elementType, int... exceptType) {
+        if (elementType != 0) {
+            boolean match = false;
+            for (int i : exceptType) {
+                if (elementType == i) {
+                    match = true;
+                    break;
+                }
+            }
+            if (!match) {
+                throw new JSONParseException("类型不一致");
+            }
         }
-        return exceptType;
+        return exceptType[0];
     }
 
     private void checkTrue() {

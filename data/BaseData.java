@@ -1,7 +1,6 @@
 package com.xiaobin.core.data;
 
 import com.xiaobin.core.json.JSON;
-import com.xiaobin.core.json.JavaType;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +20,7 @@ public class BaseData<T> {
     private final JSON json = new JSON();
     private final String[] filename;
     private final boolean storeToFileFlag;
+    private Class<T> cls;
 
     static {
 
@@ -41,6 +41,17 @@ public class BaseData<T> {
     }
 
     protected BaseData(boolean storeToFileFlag, String... filename) {
+        this.storeToFileFlag = storeToFileFlag;
+        if (this.storeToFileFlag) {
+            Objects.requireNonNull(filename);
+            this.filename = filename;
+        } else {
+            this.filename = new String[0];
+        }
+    }
+
+    protected BaseData(boolean storeToFileFlag, Class<T> cls, String... filename) {
+        this.cls = cls;
         this.storeToFileFlag = storeToFileFlag;
         if (this.storeToFileFlag) {
             Objects.requireNonNull(filename);
@@ -71,8 +82,7 @@ public class BaseData<T> {
                     byte[] bytes = Files.readAllBytes(file.toPath());
                     if (bytes.length > 0) {
                         String content = new String(bytes, StandardCharsets.UTF_8);
-                        return json.withSource(content).readList(new JavaType<>() {
-                        });
+                        return json.withSource(content).readList(this.cls);
                     }
                 } catch (IOException e) {
                     System.err.println("read file error: " + file.getAbsolutePath());

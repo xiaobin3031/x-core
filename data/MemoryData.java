@@ -7,15 +7,17 @@ import java.util.*;
  */
 public class MemoryData<T> extends BaseData<T> {
 
-    private final Map<String, List<T>> ERROR_DATA_MAP = new HashMap<>();
     private List<T> datas = new ArrayList<>();
 
     public MemoryData() {
         super(false);
     }
 
-    public MemoryData(String filename) {
-        super(true, filename);
+    /**
+     * 要放文件里，得有Class，不然类型不匹配，反编译出来的类型不一致
+     */
+    public MemoryData(String filename, Class<T> cls) {
+        super(true, cls, filename);
 
         this.datas = super.loadFromFile();
     }
@@ -25,20 +27,10 @@ public class MemoryData<T> extends BaseData<T> {
         super.storeToFile(this.datas);
     }
 
-    public void add(String key, T id) {
-        List<T> longs = ERROR_DATA_MAP.get(key);
-        if (longs == null) {
-            longs = new ArrayList<>();
-            longs.add(id);
-            ERROR_DATA_MAP.put(key, longs);
-        } else if (!longs.contains(id)) {
-            longs.add(id);
-        }
-    }
-
     public void add(T id) {
         if (!this.datas.contains(id)) {
             this.datas.add(id);
+            super.storeToFile(this.datas);
         }
     }
 
