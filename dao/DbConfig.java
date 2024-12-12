@@ -2,6 +2,7 @@ package com.xiaobin.core.dao;
 
 import com.xiaobin.core.json.JSON;
 import com.xiaobin.core.dao.model.DbConnModel;
+import com.xiaobin.core.log.SysLogUtil;
 
 import java.io.*;
 import java.sql.*;
@@ -67,6 +68,7 @@ public class DbConfig {
         }
 
         if (connection == null) {
+            SysLogUtil.logWarn("create connect from driver manager");
             try {
                 connection = DriverManager.getConnection(dbConnModel.getUrl(), dbConnModel.getUsername(), dbConnModel.getPassword());
             } catch (SQLException e) {
@@ -79,6 +81,8 @@ public class DbConfig {
                 throw new RuntimeException(e);
             }
             CONNECTION_THREAD_LOCAL.set(connection);
+        }else{
+            SysLogUtil.logWarn("get connect from thread local");
         }
         return connection;
     }

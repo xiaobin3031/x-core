@@ -16,8 +16,12 @@ public class SysLogUtil {
     private static final String MAGENTA = "\u001B[35m";
     private static final String BLUE = "\u001B[34m";
 
-    public static void logSuccess(String msg) {
+    public static void logSuccessLn(String msg) {
         System.out.println(buildGreenText(msg));
+    }
+
+    public static void logSuccess(String msg) {
+        System.out.print(buildGreenText(msg));
     }
 
     public static void logError(String msg) {

@@ -143,43 +143,19 @@ public class Toast {
         }
     }
 
-    private final ToastModel model;
-
-    public Toast(ToastModel model) {
-        this.model = model;
-    }
-
-    public void show() {
-        if (this.model == null || this.model.getMsg() == null) return;
-
-        TOAST_MSG_TEXT_AREA.requestFocus();
+    public static void show(String message) {
         if (TOAST_FRAME.isVisible()) {
             String msg = TOAST_MSG_TEXT_AREA.getText();
-            msg += "\r\n" + this.formatMsg(this.model.getMsg());
+            msg += "\r\n" + formatMsg(message);
             TOAST_MSG_TEXT_AREA.setText(msg);
         } else {
-            TOAST_MSG_TEXT_AREA.setText(this.formatMsg(this.model.getMsg()));
-            if (this.model.getTitle() != null) {
-                TOAST_FRAME.setTitle(this.model.getTitle());
-            }
-            TOAST_FRAME.setVisible(true);
-        }
-        System.out.println("show message: " + this.model.getMsg());
-    }
-
-    public void show(String message) {
-        if (TOAST_FRAME.isVisible()) {
-            String msg = TOAST_MSG_TEXT_AREA.getText();
-            msg += "\r\n" + this.formatMsg(message);
-            TOAST_MSG_TEXT_AREA.setText(msg);
-        } else {
-            TOAST_MSG_TEXT_AREA.setText(this.formatMsg(message));
+            TOAST_MSG_TEXT_AREA.setText(formatMsg(message));
             TOAST_FRAME.setVisible(true);
         }
         System.out.println("show message: " + message);
     }
 
-    private String formatMsg(String msg) {
+    private static String formatMsg(String msg) {
         if (msg != null) {
             msg = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")) + "   " + msg;
         }
@@ -196,7 +172,7 @@ public class Toast {
             System.out.println("toast client connect, index: " + clientId);
             ToastModel model = new JSON().withSource(body).readObject(ToastModel.class);
             System.out.println("toast client id: " + clientId + ", request body: " + body);
-            new Toast(model).show();
+            Toast.show(model.getMsg());
             return null;
         }
     }

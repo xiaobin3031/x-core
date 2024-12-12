@@ -2,6 +2,7 @@ package com.xiaobin.core.dao;
 
 import com.xiaobin.core.dao.annotation.Entity;
 import com.xiaobin.core.dao.annotation.Id;
+import com.xiaobin.core.log.SysLogUtil;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -30,9 +31,11 @@ public class SqlFactory {
         List<T> list = new ArrayList<>();
         PreparedStatement ps = null;
         ResultSet rs = null;
+        long start = System.currentTimeMillis();
         Connection connection = DbConfig.getConn(this.dbName);
+        String tableName = this.getTableName(cls, entity, sqlPara);
+        SysLogUtil.logSuccess("load " + tableName + ": ");
         try {
-            String tableName = this.getTableName(cls, entity, sqlPara);
             String schema = sqlPara.getSchema();
             if (schema == null || schema.trim().isEmpty()) {
                 schema = entity.schema();
@@ -50,6 +53,8 @@ public class SqlFactory {
         } finally {
             DbConfig.close(null, ps, rs);
         }
+        long end = System.currentTimeMillis();
+        SysLogUtil.logSuccessLn("cast " + (end - start) + " ms");
         return list;
     }
 

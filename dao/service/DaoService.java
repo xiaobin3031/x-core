@@ -16,13 +16,13 @@ public interface DaoService {
 
     <T> List<T> loadByValueIdAndDeleted(Class<T> cls, Object valueId, Integer deleted);
 
-    <T> List<T> loadByPIdAndDeleted(Class<T> cls, Object orderId, int deleted);
+    <T> List<T> loadByPIdAndDeleted(Class<T> cls, Object orderId, Integer deleted);
 
-    <T> List<T> loadByIdAndDeleted(Class<T> cls, List<Long> orderId, int deleted);
+    <T> List<T> loadByIdAndDeleted(Class<T> cls, List<Long> orderId, Integer deleted);
 
-    <T> List<T> loadByOrderIdAndDeleted(Class<T> cls, List<Long> orderId, int deleted);
+    <T> List<T> loadByOrderIdAndDeleted(Class<T> cls, List<Long> orderId, Integer deleted);
 
-    <T> List<T> loadByOrderIdAndDeleted(Class<T> cls, Object orderId, int deleted);
+    <T> List<T> loadByOrderIdAndDeleted(Class<T> cls, Object orderId, Integer deleted);
 
-    <T> List<T> loadByPayOrderSnAndDeleted(Class<T> cls, String payOrderSn, int deleted);
+    <T> List<T> loadByPayOrderSnAndDeleted(Class<T> cls, String payOrderSn, Integer deleted);
 }
