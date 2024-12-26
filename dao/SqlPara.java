@@ -1,10 +1,12 @@
 package com.xiaobin.core.dao;
 
+import com.xiaobin.core.log.SysLogUtil;
 import lombok.Getter;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * created by xuweibin at 2024/8/20 16:24
@@ -264,6 +266,9 @@ public class SqlPara {
         stringBuilder.append(tableName);
         String where = this.getWhere();
         stringBuilder.append(where);
-        return stringBuilder.toString();
+        String sql = stringBuilder.toString();
+        SysLogUtil.logWarn("sql: " + sql);
+        SysLogUtil.logWarn("params: " + values.stream().map(a -> a == null ? "null" : a.toString()).collect(Collectors.joining(", ")));
+        return sql;
     }
 }

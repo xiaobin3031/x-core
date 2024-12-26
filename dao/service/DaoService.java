@@ -10,6 +10,8 @@ public interface DaoService {
 
     <T> List<T> loadByIdAndDeleted(Class<T> cls, Object orderId, Integer deleted);
 
+    <T> T loadOneByIdAndDeleted(Class<T> cls, Object orderId, Integer deleted);
+
     <T> List<T> loadByGoodsIdAndDeleted(Class<T> cls, Object goodsId, Integer deleted);
 
     <T> List<T> loadByCombGoodsIdAndDeleted(Class<T> cls, Object goodsId, Integer deleted);
@@ -25,4 +27,8 @@ public interface DaoService {
     <T> List<T> loadByOrderIdAndDeleted(Class<T> cls, Object orderId, Integer deleted);
 
     <T> List<T> loadByPayOrderSnAndDeleted(Class<T> cls, String payOrderSn, Integer deleted);
+
+    <T> List<T> loadByTypeAndDeleted(Class<T> cls, List<String> types, Integer deleted);
+
+    <T> List<T> loadByTypeAndDeleted(Class<T> cls, String type, Integer deleted);
 }

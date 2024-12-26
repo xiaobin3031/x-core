@@ -16,9 +16,9 @@ public class DbConfig {
 
     private final static Map<String, DbConnModel> DB_CONN_MODEL_MAP = new HashMap<>();
 
-    private final static ThreadLocal<Connection> CONNECTION_THREAD_LOCAL = new ThreadLocal<>();
+    private final static ThreadLocal<Map<String, Connection>> CONNECTION_THREAD_LOCAL = ThreadLocal.withInitial(HashMap::new);
 
-    private final static ThreadLocal<Connection> TRANSACTION_CONNECTION_THREAD_LOCAL = new ThreadLocal<>();
+    private final static ThreadLocal<Map<String, Connection>> TRANSACTION_CONNECTION_THREAD_LOCAL = ThreadLocal.withInitial(HashMap::new);
 
     static {
         try {
@@ -52,12 +52,12 @@ public class DbConfig {
         DbConnModel dbConnModel = DB_CONN_MODEL_MAP.get(name);
         if (dbConnModel == null) throw new RuntimeException("db config not found with name: " + name);
 
-        Connection connection = TRANSACTION_CONNECTION_THREAD_LOCAL.get();
+        Connection connection = TRANSACTION_CONNECTION_THREAD_LOCAL.get().get(name);
         if (connection == null) {
-            connection = CONNECTION_THREAD_LOCAL.get();
+            connection = CONNECTION_THREAD_LOCAL.get().get(name);
         }
 
-        if(connection != null){
+        if (connection != null) {
             try {
                 if (connection.isClosed()) {
                     connection = null;
@@ -80,9 +80,7 @@ public class DbConfig {
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
-            CONNECTION_THREAD_LOCAL.set(connection);
-        }else{
-            SysLogUtil.logWarn("get connect from thread local");
+            CONNECTION_THREAD_LOCAL.get().put(name, connection);
         }
         return connection;
     }
@@ -97,7 +95,7 @@ public class DbConfig {
             throw new RuntimeException(e);
         }
 
-        TRANSACTION_CONNECTION_THREAD_LOCAL.set(connection);
+        TRANSACTION_CONNECTION_THREAD_LOCAL.get().put(name, connection);
 
         return connection;
     }

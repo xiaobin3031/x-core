@@ -35,12 +35,14 @@ public class SqlFactory {
         Connection connection = DbConfig.getConn(this.dbName);
         String tableName = this.getTableName(cls, entity, sqlPara);
         SysLogUtil.logSuccess("load " + tableName + ": ");
+        String schema = sqlPara.getSchema();
+        if (schema == null || schema.trim().isEmpty()) {
+            schema = entity.schema();
+        }
+        String sql = null;
         try {
-            String schema = sqlPara.getSchema();
-            if (schema == null || schema.trim().isEmpty()) {
-                schema = entity.schema();
-            }
-            ps = connection.prepareStatement(sqlPara.toSql(tableName, schema));
+            sql = sqlPara.toSql(tableName, schema);
+            ps = connection.prepareStatement(sql);
             this.setParam(ps, sqlPara.getValues(), false);
             rs = ps.executeQuery();
             while (rs.next()) {
@@ -48,7 +50,6 @@ public class SqlFactory {
                 list.add(tt);
             }
         } catch (SQLException e) {
-            e.printStackTrace();
             System.err.println("load data error: " + e.getMessage());
         } finally {
             DbConfig.close(null, ps, rs);

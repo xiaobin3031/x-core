@@ -3,11 +3,14 @@ package com.xiaobin.core.dao.service;
 import com.xiaobin.core.dao.SqlFactory;
 import com.xiaobin.core.dao.SqlPara;
 import com.xiaobin.core.dao.annotation.Entity;
+import com.xiaobin.core.data.VersionData;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -16,13 +19,16 @@ import java.util.Objects;
 public class DaoServiceProxy implements InvocationHandler {
 
     private final SqlFactory sqlFactory;
+    private final VersionData versionData;
 
-    public DaoServiceProxy(String dbName) {
+    public DaoServiceProxy(String dbName, VersionData versionData) {
         this.sqlFactory = new SqlFactory(dbName);
+        this.versionData = versionData;
     }
 
-    public DaoServiceProxy(SqlFactory sqlFactory) {
+    public DaoServiceProxy(SqlFactory sqlFactory, VersionData versionData) {
         this.sqlFactory = sqlFactory;
+        this.versionData = versionData;
     }
 
     public DaoService getService() {
@@ -34,6 +40,20 @@ public class DaoServiceProxy implements InvocationHandler {
         Objects.requireNonNull(args);
         SqlPara sqlPara = new SqlPara();
         if (args[0] instanceof Class<?> cls) {
+            StringBuilder keyBuilder = new StringBuilder();
+            for (Object arg : args) {
+                if (arg != null) {
+                    keyBuilder.append(arg).append(0x10);
+                }
+            }
+            String key = keyBuilder.toString();
+            Object data = null;
+            if (this.versionData != null) {
+                data = this.versionData.getData(key);
+            }
+            if (data != null) {
+                return data;
+            }
             Entity entity = cls.getDeclaredAnnotation(Entity.class);
             if (entity != null) {
                 String tableName;
@@ -46,8 +66,20 @@ public class DaoServiceProxy implements InvocationHandler {
                 sqlPara.setTableName(tableName);
                 sqlPara.setSchema(entity.schema());
                 String methodName = method.getName();
+                if("loadByPIdAndDeleted".equals(methodName) && args.length >= 2 && args[1] instanceof Long arg1 && arg1 == 0){
+                    // 先临时改一下
+                    return Collections.emptyList();
+                }
+                int offset = 0;
+                boolean loadOne = false;
                 if (methodName.startsWith("loadBy")) {
-                    String params = methodName.substring(6);
+                    offset = 6;
+                } else if (methodName.startsWith("loadOneBy")) {
+                    offset = 9;
+                    loadOne = true;
+                }
+                if (offset > 0) {
+                    String params = methodName.substring(offset);
                     int index;
                     int argIndex = 1;
                     while (true) {
@@ -73,7 +105,20 @@ public class DaoServiceProxy implements InvocationHandler {
                         }
                         params = params.substring(index + 3);
                     }
-                    return sqlFactory.load(cls, sqlPara);
+                    List<?> list = this.sqlFactory.load(cls, sqlPara);
+                    if (loadOne) {
+                        if (list.size() == 1) {
+                            data = list.get(0);
+                        } else if (!list.isEmpty()) {
+                            throw new RuntimeException("want one record, but get " + list.size());
+                        }
+                    } else {
+                        data = list;
+                    }
+                    if (this.versionData != null && data != null) {
+                        this.versionData.setData(key, data);
+                    }
+                    return data;
                 }
             }
         } else {
