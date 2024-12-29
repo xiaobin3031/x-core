@@ -4,12 +4,20 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.xiaobin.core.json.JSON;
+import com.xiaobin.core.server.config.Get;
+import com.xiaobin.core.server.config.Post;
+import com.xiaobin.core.server.config.Request;
+import com.xiaobin.core.server.exception.HttpServerException;
 import com.xiaobin.core.server.model.HttpResponse;
+import com.xiaobin.core.server.model.RequestInfo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -25,14 +33,45 @@ public class MyHttpServer {
     private static HttpServer server;
     private static final Map<String, MyHttpHandler<?>> HTTP_HANDLER_MAP = new HashMap<>();
 
-    static {
-//        java.util.Timer timer = new Timer();
-//        timer.schedule(new TimerTask() {
-//            @Override
-//            public void run() {
-//                createServer(true);
-//            }
-//        }, 1000, TimeUnit.MINUTES.toMillis(10));
+    private static final RequestHandConfig requestHandConfig = new RequestHandConfig();
+    private final JSON json = new JSON();
+
+    public static void createServer(int port, Object... requestHandler){
+        registerHandler(requestHandler);
+        createServer(port);
+    }
+
+    private static void registerHandler(Object... requestHandlers){
+        if(requestHandlers == null || requestHandlers.length == 0){
+            throw new HttpServerException("request handler is empty");
+        }
+
+        for (Object requestHandler : requestHandlers) {
+            Class<?> aClass = requestHandler.getClass();
+            Annotation[] annotations = aClass.getAnnotations();
+            String prefixPath = "";
+            for (Annotation annotation : annotations) {
+                if(annotation instanceof Request request){
+                    prefixPath = request.value();
+                }
+            }
+
+            Method[] methods = aClass.getDeclaredMethods();
+            for (Method method : methods) {
+                Get get = method.getAnnotation(Get.class);
+                if(get != null){
+                    String path = get.value();
+                    path = prefixPath + "/" + path;
+                    requestHandConfig.defHandler(path, method, "get", requestHandler);
+                }
+                Post post = method.getAnnotation(Post.class);
+                if(post != null){
+                    String path = post.value();
+                    path = prefixPath + "/" + path;
+                    requestHandConfig.defHandler(path, method, "post", requestHandler);
+                }
+            }
+        }
     }
 
     public static void createServer(int port) {
@@ -85,7 +124,8 @@ public class MyHttpServer {
             String result;
             HttpResponse<Object> response = HttpResponse.builder().build();
             if ("get".equalsIgnoreCase(exchange.getRequestMethod()) || "post".equalsIgnoreCase(exchange.getRequestMethod())) {
-                MyHttpHandler<?> handler = HTTP_HANDLER_MAP.get(uriString);
+//                MyHttpHandler<?> handler = requestHandConfig.getHandler(uriString, exchange.getRequestMethod());
+                RequestInfo handler = requestHandConfig.getHandler(uriString, exchange.getRequestMethod());
                 if (handler == null) {
                     response.setCode(0);
                     response.setMsg("Success");
@@ -98,14 +138,19 @@ public class MyHttpServer {
                         while ((read = requestBody.read(bytes)) > -1) {
                             byteArrayOutputStream.write(bytes, 0, read);
                         }
-                        Object value = handler.handle(byteArrayOutputStream.toString(StandardCharsets.UTF_8));
+                        Parameter[] parameters = handler.method().getParameters();
+                        Object[] params = new Object[parameters.length];
+                        JSON json = new JSON();
+                        for (int i = 0; i < parameters.length; i++) {
+                            params[i] = json.withSource(byteArrayOutputStream.toString(StandardCharsets.UTF_8)).readObject(parameters[i].getType());
+                        }
+                        Object value = handler.method().invoke(handler.instance(), params);
                         response.setCode(0);
                         response.setMsg("Success");
                         response.setData(value);
                     } catch (Exception e) {
                         response.setCode(-1);
                         response.setMsg(e.getMessage());
-                        e.printStackTrace();
                     }
                 }
             } else {
