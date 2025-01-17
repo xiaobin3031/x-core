@@ -12,7 +12,11 @@ import java.util.List;
 public class OpCodeGenerate {
 
     public static void main(String[] args) throws Exception {
-        String outputPath = "E:\\code\\git\\sourceTreeTool\\src\\main\\java\\com\\xiaobin\\core\\java";
+        if(args.length == 0){
+            System.out.println("Usage: generate_opcode <output directory>");
+            System.exit(64);
+        }
+        String outputPath = args[0];
 
         generateOpCode(outputPath, List.of(
                 "aaload 50",
@@ -229,11 +233,12 @@ public class OpCodeGenerate {
             writer.println(" * created by xuweibin at " + LocalDateTime.now());
             writer.println(" */");
 
-            writer.println("abstract class OpCodes {");
+            writer.println("@Getter");
+            writer.println("public abstract class OpCodes {");
             writer.println();
             writer.println("  final int opCode;");
             writer.println("  final String name;");
-            writer.println("  OpCodes(int opCode, String name){");
+            writer.println("  public OpCodes(int opCode, String name){");
             writer.println("    this.opCode = opCode;");
             writer.println("    this.name = name;");
             writer.println("  }");
@@ -251,7 +256,7 @@ public class OpCodeGenerate {
             writer.println("    };");
             writer.println("  }");
 
-            writer.println("  interface Visitor {");
+            writer.println("  public interface Visitor {");
             for (String opCode : opCodes) {
                 String[] strings = opCode.split(",");
                 String[] names = strings[0].split(" ");
@@ -261,14 +266,14 @@ public class OpCodeGenerate {
             writer.println("  }");
             writer.println();
 
-            writer.println("  abstract void accept(Visitor visitor);");
+            writer.println("  public abstract void accept(Visitor visitor);");
             writer.println();
 
             for (String opCode : opCodes) {
                 String[] strings = opCode.split(",");
                 String[] names = strings[0].split(" ");
                 String clsName = names[0].substring(0, 1).toUpperCase() + names[0].substring(1);
-                writer.printf("  static class %s extends OpCodes {%n", clsName);
+                writer.printf("  public static class %s extends OpCodes {%n", clsName);
                 writer.println();
                 writer.printf("    %s(){ super(%s, \"%s\"); }%n", clsName, names[1], names[0]);
 
@@ -278,7 +283,7 @@ public class OpCodeGenerate {
                 writer.println();
 
                 writer.println("    @Override");
-                writer.println("    void accept(Visitor visitor) {");
+                writer.println("    public void accept(Visitor visitor) {");
                 writer.println("      visitor.visit" + clsName + "(this);");
                 writer.println("    }");
                 writer.println("  }");

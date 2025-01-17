@@ -1,13 +1,16 @@
 package com.xiaobin.core.java;
 
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * created by xuweibin at 2025/1/2 17:32
- * todo
+ *
  */
-class AttributeInfo {
+@Getter
+public class AttributeInfo {
 
     int attributeNameIndex;
 
@@ -20,16 +23,17 @@ class AttributeInfo {
     // attributeLength
     AttrInfo info;
 
-    abstract static class AttrInfo {
+    @Getter
+    public abstract static class AttrInfo {
 
-        static class ConstantValue extends AttrInfo {
+        public static class ConstantValue extends AttrInfo {
 
             int constantValueIndex;
 
             Object constantValue;
         }
 
-        static class Code extends AttrInfo {
+        public static class Code extends AttrInfo {
 
             int maxStack;
 
@@ -45,8 +49,10 @@ class AttributeInfo {
 
             int attributesCount;
 
+            @Getter
             AttributeInfo[] attributes;
 
+            @Getter
             List<OpCodes> opCodesList;
 
             static class ExceptionTable {
@@ -80,21 +86,21 @@ class AttributeInfo {
             }
         }
 
-        static class StaticMapTable extends AttrInfo {
+        public static class StaticMapTable extends AttrInfo {
             int numberOfEntries;
 
             // todo 暂时不解析
             byte[] entryBytes;
         }
 
-        static class Exceptions extends AttrInfo {
+        public static class Exceptions extends AttrInfo {
 
             int numberOfExceptions;
 
             int[] exceptionIndexTable;
         }
 
-        static class InnerClasses extends AttrInfo {
+        public static class InnerClasses extends AttrInfo {
             int numberOfClasses;
 
             InnerClass[] innerClasses;
@@ -110,32 +116,33 @@ class AttributeInfo {
             }
         }
 
-        static class EnclosingMethod extends AttrInfo {
+        public static class EnclosingMethod extends AttrInfo {
             int classIndex;
 
             int methodIndex;
         }
 
-        static class Synthetic extends AttrInfo {
+        public static class Synthetic extends AttrInfo {
         }
 
-        static class Signature extends AttrInfo {
+        public static class Signature extends AttrInfo {
             int signatureIndex;
 
             String signature;
         }
 
-        static class SourceFile extends AttrInfo {
+        public static class SourceFile extends AttrInfo {
             int sourceFileIndex;
 
+            @Getter
             String sourceFile;
         }
 
-        static class SourceDebugExtension extends AttrInfo {
+        public static class SourceDebugExtension extends AttrInfo {
             byte[] debugExtension;
         }
 
-        static class LineNumberTable extends AttrInfo {
+        public static class LineNumberTable extends AttrInfo {
             int lineNumberTableLength;
 
             LineNumber[] lineNumberTable;
@@ -147,63 +154,76 @@ class AttributeInfo {
             }
         }
 
-        static class LocalVariableTable extends AttrInfo {
+        public static class LocalVariableTable extends AttrInfo {
             int localVariableTableLength;
 
+            @Getter
             LocalVariable[] localVariableTable;
 
-            static class LocalVariable {
+            public static class LocalVariable {
                 int startPc;
 
                 int length;
 
                 int nameIndex;
 
+                @Getter
+                String name;
+
                 int descriptorIndex;
+
+                @Getter
+                String descriptor;
 
                 int index;
             }
         }
 
-        static class LocalVariableTypeTable extends AttrInfo {
+        public static class LocalVariableTypeTable extends AttrInfo {
             int localVariableTypeTableLength;
 
             LocalVariableType[] localVariableTypeTable;
 
-            static class LocalVariableType {
+            public static class LocalVariableType {
                 int startPc;
 
                 int length;
 
                 int nameIndex;
 
+                @Getter
+                String name;
+
                 int signatureIndex;
+
+                @Getter
+                String signature;
 
                 int index;
             }
         }
 
-        static class Deprecated extends AttrInfo {
+        public static class Deprecated extends AttrInfo {
 
         }
 
-        static class RuntimeVisibleAnnotations extends AttrInfo {
+        public static class RuntimeVisibleAnnotations extends AttrInfo {
             int numAnnotations;
             Annotation[] annotations;
         }
 
-        static class Annotation {
+        public static class Annotation {
             int typeIndex;
             int numPairs;
             AnnotationPair[] pairs;
         }
 
-        static class AnnotationPair {
+        public static class AnnotationPair {
             int nameIndex;
             ElementValue elementValue;
         }
 
-        static class ElementValue {
+        public static class ElementValue {
             char tag;
 
             // tag == B || C || D || F || I || J || S || Z || s
@@ -224,45 +244,45 @@ class AttributeInfo {
             ElementValue[] values;
         }
 
-        static class RuntimeInvisibleAnnotations extends AttrInfo {
+        public static class RuntimeInvisibleAnnotations extends AttrInfo {
             int numAnnotations;
             Annotation[] annotations;
         }
 
-        static class RuntimeVisibleParameterAnnotations extends AttrInfo {
+        public static class RuntimeVisibleParameterAnnotations extends AttrInfo {
             int numParameters;
             ParameterAnnotation[] parameterAnnotations;
         }
 
-        static class ParameterAnnotation {
+        public static class ParameterAnnotation {
             int numAnnotations;
             Annotation[] annotations;
         }
 
-        static class RuntimeInvisibleParameterAnnotations extends AttrInfo {
+        public static class RuntimeInvisibleParameterAnnotations extends AttrInfo {
             int numParameters;
             ParameterAnnotation[] parameterAnnotations;
         }
 
-        static class RuntimeVisibleTypeAnnotations extends AttrInfo {
+        public static class RuntimeVisibleTypeAnnotations extends AttrInfo {
             int numAnnotations;
             TypeAnnotation[] annotations;
         }
 
-        static class TypeAnnotation {
+        public static class TypeAnnotation {
             // todo
         }
 
-        static class RuntimeInvisibleTypeAnnotations extends AttrInfo {
+        public static class RuntimeInvisibleTypeAnnotations extends AttrInfo {
             int numAnnotations;
             TypeAnnotation[] annotations;
         }
 
-        static class AnnotationDefault extends AttrInfo {
+        public static class AnnotationDefault extends AttrInfo {
             ElementValue defaultValue;
         }
 
-        static class BootstrapMethods extends AttrInfo {
+        public static class BootstrapMethods extends AttrInfo {
 
             int numBootstrapMethods;
             BootstrapMethod[] bootstrapMethods;
@@ -274,7 +294,7 @@ class AttributeInfo {
             }
         }
 
-        static class MethodParameters extends AttrInfo {
+        public static class MethodParameters extends AttrInfo {
             int parametersCount;
             Parameter[] parameters;
 
@@ -285,7 +305,7 @@ class AttributeInfo {
 
         }
 
-        static class Module extends AttrInfo {
+        public static class Module extends AttrInfo {
 
             int moduleNameIndex;
             int moduleFlags;
@@ -333,25 +353,25 @@ class AttributeInfo {
             }
         }
 
-        static class ModulePackages extends AttrInfo {
+        public static class ModulePackages extends AttrInfo {
             int packagesCount;
             int[] packagesIndexes;
         }
 
-        static class ModuleMainClass extends AttrInfo {
+        public static class ModuleMainClass extends AttrInfo {
             int mainClassIndex;
         }
 
-        static class NestHost extends AttrInfo {
+        public static class NestHost extends AttrInfo {
             int hostClassIndex;
         }
 
-        static class NestMembers extends AttrInfo {
+        public static class NestMembers extends AttrInfo {
             int numberOfClasses;
             int[] classes;
         }
 
-        static class Record extends AttrInfo {
+        public static class Record extends AttrInfo {
             int componentsCount;
             Component[] components;
 
@@ -363,7 +383,7 @@ class AttributeInfo {
             }
         }
 
-        static class PermittedSubclasses extends AttrInfo {
+        public static class PermittedSubclasses extends AttrInfo {
             int numberOfClasses;
             int[] classes;
         }

@@ -1,5 +1,7 @@
 package com.xiaobin.core.java;
 
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -7,7 +9,7 @@ import java.util.Map;
 /**
  * created by xuweibin at 2025/1/2 17:31
  */
-class FieldInfo {
+public class FieldInfo {
 
     private final static int ACC_PUBLIC = 0x0001; // Declared public; may be accessed from outside its package.
     private final static int ACC_PRIVATE = 0x0002; // Declared private; accessible only within thedefining class and other classes belonging to the same nest (§5.4.4).
@@ -34,9 +36,11 @@ class FieldInfo {
     int accessFlags;
 
     int nameIndex;
+    @Getter
     String name;
 
     int descriptorIndex;
+    @Getter
     String descriptor;
 
     int attributesCount;

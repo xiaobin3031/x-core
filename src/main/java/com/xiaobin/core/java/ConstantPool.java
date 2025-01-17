@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
  */
 @Getter
 @Setter
-class ConstantPool {
+public class ConstantPool {
 
     final static byte Utf8 = 1; // 45.3 1.0.2
     final static byte Integer = 3; // 45.3 1.0.2
@@ -37,7 +37,7 @@ class ConstantPool {
     // length = count - 1
     CpInfo[] cpInfo;
 
-    abstract static class CpInfo {
+    public abstract static class CpInfo {
 
         byte tag;
 
@@ -49,10 +49,13 @@ class ConstantPool {
             this.tag = tag;
         }
 
-        static class CpClass extends CpInfo {
+        public static class CpClass extends CpInfo {
 
             // u2
             int nameIndex;
+
+            @Getter
+            String name;
 
             CpClass(byte tag, U2 nameIndex) {
                 super(tag);
@@ -70,12 +73,18 @@ class ConstantPool {
             }
         }
 
-        static class CpFieldRef extends CpInfo {
+        public static class CpFieldRef extends CpInfo {
             // u2
             int classIndex;
 
+            @Getter
+            String className;
+
             // u2
             int nameAndTypeIndex;
+
+            @Getter
+            CpInfo.CpNameAndType nameAndType;
 
             CpFieldRef(byte tag, U2 classIndex, U2 nameAndTypeIndex) {
                 super(tag);
@@ -94,12 +103,18 @@ class ConstantPool {
             }
         }
 
-        static class CpMethodRef extends CpInfo {
+        public static class CpMethodRef extends CpInfo {
             // u2
             int classIndex;
 
+            @Getter
+            String className;
+
             // u2
             int nameAndTypeIndex;
+
+            @Getter
+            CpInfo.CpNameAndType nameAndType;
 
             CpMethodRef(byte tag, U2 classIndex, U2 nameAndTypeIndex) {
                 super(tag);
@@ -118,12 +133,18 @@ class ConstantPool {
             }
         }
 
-        static class CpInterfaceMethodRef extends CpInfo {
+        public static class CpInterfaceMethodRef extends CpInfo {
             // u2
             int classIndex;
 
+            @Getter
+            String className;
+
             // u2
             int nameAndTypeIndex;
+
+            @Getter
+            CpInfo.CpNameAndType nameAndType;
 
             CpInterfaceMethodRef(byte tag, U2 classIndex, U2 nameAndTypeIndex) {
                 super(tag);
@@ -142,9 +163,12 @@ class ConstantPool {
             }
         }
 
-        static class CpString extends CpInfo {
+        public static class CpString extends CpInfo {
             // u2
             int stringIndex;
+
+            @Getter
+            String name;
 
             CpString(byte tag, U2 stringIndex) {
                 super(tag);
@@ -162,8 +186,10 @@ class ConstantPool {
             }
         }
 
-        static class CpInteger extends CpInfo {
+        @Getter
+        public static class CpInteger extends CpInfo {
             // u4
+
             int value;
 
             CpInteger(byte tag, U4 bytes) {
@@ -182,30 +208,43 @@ class ConstantPool {
             }
         }
 
-        static class CpFloat extends CpInfo {
+        public static class CpFloat extends CpInfo {
 
             int value;
+
+            @Getter
+            float floatValue;
 
             CpFloat(byte tag, U4 bytes) {
                 super(tag);
                 this.value = bytes.getValue();
-            }
 
-            @Override
-            Object getValue(CpInfo[] cpInfos) {
                 int bits = value;
-                if (bits == 0x7f800000) return java.lang.Float.POSITIVE_INFINITY;
-                if (bits == 0xff800000) return java.lang.Float.NEGATIVE_INFINITY;
+                if (bits == 0x7f800000) {
+                    floatValue = java.lang.Float.POSITIVE_INFINITY;
+                    return;
+                }
+                if (bits == 0xff800000) {
+                    floatValue = java.lang.Float.NEGATIVE_INFINITY;
+                    return;
+                }
 
-                if (bits >= 0x7f800001 && bits < 0x7fffffff || bits >= 0xff800001 && bits < 0xfffffff)
-                    return java.lang.Float.NaN;
+                if (bits >= 0x7f800001 && bits < 0x7fffffff || bits >= 0xff800001 && bits < 0xfffffff) {
+                    floatValue = java.lang.Float.NaN;
+                    return;
+                }
 
                 int s = ((bits >> 31) == 0) ? 1 : -1;
                 int e = ((bits >> 23) & 0xff);
                 int m = (e == 0) ?
                         (bits & 0x7fffff) << 1 :
                         (bits & 0x7fffff) | 0x800000;
-                return (float) (s * m * Math.pow(2.0, e - 150.0));
+                floatValue = (float) (s * m * Math.pow(2.0, e - 150.0));
+            }
+
+            @Override
+            Object getValue(CpInfo[] cpInfos) {
+                return floatValue;
             }
 
             @Override
@@ -214,23 +253,28 @@ class ConstantPool {
             }
         }
 
-        static class CpLong extends CpInfo {
+        public static class CpLong extends CpInfo {
 
             int high;
 
             int low;
+
+            @Getter
+            long value;
 
             CpLong(byte tag, U4 highBytes, U4 lowBytes) {
                 super(tag);
                 this.high = highBytes.getValue();
                 this.low = lowBytes.getValue();
+
+                long high = this.high;
+                high <<= 32;
+                value = high + this.low;
             }
 
             @Override
             Object getValue(CpInfo[] cpInfos) {
-                long high = this.high;
-                high <<= 32;
-                return high + this.low;
+                return value;
             }
 
             @Override
@@ -239,34 +283,46 @@ class ConstantPool {
             }
         }
 
-        static class CpDouble extends CpInfo {
+        public static class CpDouble extends CpInfo {
 
             int high;
             int low;
+
+            double doubleValue;
 
             CpDouble(byte tag, U4 highBytes, U4 lowBytes) {
                 super(tag);
                 this.high = highBytes.getValue();
                 this.low = lowBytes.getValue();
-            }
 
-            @Override
-            Object getValue(CpInfo[] cpInfos) {
                 long bits = this.high;
                 bits <<= 32;
                 bits += this.low;
-                if (bits == 0x7ff0000000000000L) return java.lang.Double.POSITIVE_INFINITY;
-                if (bits == 0xfff0000000000000L) return java.lang.Double.NEGATIVE_INFINITY;
+                if (bits == 0x7ff0000000000000L) {
+                    doubleValue = java.lang.Double.POSITIVE_INFINITY;
+                    return;
+                }
+                if (bits == 0xfff0000000000000L) {
+                    doubleValue = java.lang.Double.NEGATIVE_INFINITY;
+                    return;
+                }
 
-                if (bits >= 0x7ff0000000000001L && bits < 0x7fffffffffffffffL || bits >= 0xfff0000000000001L && bits < 0xffffffffffffffffL)
-                    return java.lang.Double.NaN;
+                if (bits >= 0x7ff0000000000001L && bits < 0x7fffffffffffffffL || bits >= 0xfff0000000000001L && bits < 0xffffffffffffffffL) {
+                    doubleValue = java.lang.Double.NaN;
+                    return;
+                }
 
                 int s = ((bits >> 63) == 0) ? 1 : -1;
                 int e = (int) ((bits >> 52) & 0x7ffL);
                 long m = (e == 0) ?
                         (bits & 0xfffffffffffffL) << 1 :
                         (bits & 0xfffffffffffffL) | 0x10000000000000L;
-                return s * m * Math.pow(2.0, e - 1075.0);
+                doubleValue = s * m * Math.pow(2.0, e - 1075.0);
+            }
+
+            @Override
+            Object getValue(CpInfo[] cpInfos) {
+                return doubleValue;
             }
 
             @Override
@@ -275,13 +331,19 @@ class ConstantPool {
             }
         }
 
-        static class CpNameAndType extends CpInfo {
+        public static class CpNameAndType extends CpInfo {
 
             // u2
             int nameIndex;
 
             // u2
             int descriptorIndex;
+
+            @Getter
+            String name;
+
+            @Getter
+            String descriptor;
 
             CpNameAndType(byte tag, U2 nameIndex, U2 descriptorIndex) {
                 super(tag);
@@ -300,13 +362,16 @@ class ConstantPool {
             }
         }
 
-        static class CpUtf8 extends CpInfo {
+        public static class CpUtf8 extends CpInfo {
 
             // u2
             int length;
 
             // length
             byte[] bytes;
+
+            @Getter
+            String value;
 
             CpUtf8(byte tag, int length, byte[] bytes) {
                 super(tag);
@@ -325,13 +390,40 @@ class ConstantPool {
             }
         }
 
-        static class CpMethodHandle extends CpInfo {
+        public static class CpMethodHandle extends CpInfo {
 
             // u1
+            /**
+             * field ref
+             * 1 REF_getField
+             * 2 REF_getStatic
+             * 3 REF_putField
+             * 4 REF_putStatic
+             *
+             * method ref
+             * 5 REF_invokeVirtual
+             * 8 REF_newInvokeSpecial
+             *
+             * method ref or interface method ref
+             * 6 REF_invokeStatic
+             * 7 REF_invokeSpecial
+             *
+             * interface method ref
+             * 9 REF_invokeInterface
+             */
             byte referenceKind;
 
             // u2
             int referenceIndex;
+
+            @Getter
+            CpInfo.CpFieldRef fieldRef;
+
+            @Getter
+            CpInfo.CpMethodRef methodRef;
+
+            @Getter
+            CpInfo.CpInterfaceMethodRef interfaceMethodRef;
 
             CpMethodHandle(byte tag, byte referenceKind, U2 referenceIndex) {
                 super(tag);
@@ -350,10 +442,13 @@ class ConstantPool {
             }
         }
 
-        static class CpMethodType extends CpInfo {
+        public static class CpMethodType extends CpInfo {
 
             // u2
             int descriptorIndex;
+
+            @Getter
+            String descriptor;
 
             CpMethodType(byte tag, U2 descriptorIndex) {
                 super(tag);
@@ -371,13 +466,16 @@ class ConstantPool {
             }
         }
 
-        static class CpDynamic extends CpInfo {
+        public static class CpDynamic extends CpInfo {
 
             // u2
             int bootstrapMethodAttrIndex;
 
             // u2
             int nameAndTypeIndex;
+
+            @Getter
+            CpInfo.CpNameAndType nameAndType;
 
             CpDynamic(byte tag, U2 bootstrapMethodAttrIndex, U2 nameAndTypeIndex) {
                 super(tag);
@@ -396,13 +494,16 @@ class ConstantPool {
             }
         }
 
-        static class CpInvokeDynamic extends CpInfo {
+        public static class CpInvokeDynamic extends CpInfo {
 
             // u2
             int bootstrapMethodAttrIndex;
 
             // u2
             int nameAndTypeIndex;
+
+            @Getter
+            CpInfo.CpNameAndType nameAndType;
 
             CpInvokeDynamic(byte tag, U2 bootstrapMethodAttrIndex, U2 nameAndTypeIndex) {
                 super(tag);
@@ -421,10 +522,13 @@ class ConstantPool {
             }
         }
 
-        static class CpModule extends CpInfo {
+        public static class CpModule extends CpInfo {
 
             // u2
             int nameIndex;
+
+            @Getter
+            String name;
 
             CpModule(byte tag, U2 nameIndex) {
                 super(tag);
@@ -442,10 +546,13 @@ class ConstantPool {
             }
         }
 
-        static class CpPackage extends CpInfo {
+        public static class CpPackage extends CpInfo {
 
             // u2
             int nameIndex;
+
+            @Getter
+            String name;
 
             CpPackage(byte tag, U2 nameIndex) {
                 super(tag);

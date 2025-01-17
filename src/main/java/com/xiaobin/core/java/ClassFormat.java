@@ -2,13 +2,17 @@ package com.xiaobin.core.java;
 
 import com.xiaobin.core.java.model.U2;
 import com.xiaobin.core.java.model.U4;
+import lombok.Getter;
+
+import java.nio.charset.StandardCharsets;
 
 import static com.xiaobin.core.java.ConstantPool.*;
 
 /**
  * created by xuweibin at 2025/1/2 16:51
  */
-class ClassFormat {
+@Getter
+public class ClassFormat {
 
     String magic;
 
@@ -38,11 +42,11 @@ class ClassFormat {
 
     private final ByteReader byteReader;
 
-    ClassFormat(byte[] bytes) {
+    public ClassFormat(byte[] bytes) {
         this.byteReader = new ByteReader(bytes);
     }
 
-    void resolve() {
+    public void resolve() {
         magic();
         version();
         constantPool();
@@ -121,6 +125,84 @@ class ClassFormat {
         }
 
         this.constantPool = constantPool;
+
+        for (CpInfo cpInfo : constantPool.cpInfo) {
+            if (cpInfo == null) continue;
+            switch (cpInfo.tag) {
+                case Class -> {
+                    CpInfo.CpClass cpClass = (CpInfo.CpClass) cpInfo;
+                    cpClass.name = getUtf8(cpClass.nameIndex);
+                }
+                case String -> {
+                    CpInfo.CpString cpString = (CpInfo.CpString) cpInfo;
+                    cpString.name = getUtf8(cpString.stringIndex);
+                }
+                case MethodType -> {
+                    CpInfo.CpMethodType cpMethodType = (CpInfo.CpMethodType) cpInfo;
+                    cpMethodType.descriptor = getUtf8(cpMethodType.descriptorIndex);
+                }
+                case Module -> {
+                    CpInfo.CpModule cpModule = (CpInfo.CpModule) cpInfo;
+                    cpModule.name = getUtf8(cpModule.nameIndex);
+                }
+                case Package -> {
+                    CpInfo.CpPackage cpPackage = (CpInfo.CpPackage) cpInfo;
+                    cpPackage.name = getUtf8(cpPackage.nameIndex);
+                }
+                case Fieldref -> {
+                    CpInfo.CpFieldRef cpFieldRef = (CpInfo.CpFieldRef) cpInfo;
+                    cpFieldRef.className = getUtf8(cpFieldRef.classIndex);
+                    cpFieldRef.nameAndType = (CpInfo.CpNameAndType) constantPool.cpInfo[cpFieldRef.nameAndTypeIndex];
+                }
+                case Methodref -> {
+                    CpInfo.CpMethodRef cpMethodRef = (CpInfo.CpMethodRef) cpInfo;
+                    cpMethodRef.className = getUtf8(cpMethodRef.classIndex);
+                    cpMethodRef.nameAndType = (CpInfo.CpNameAndType) constantPool.cpInfo[cpMethodRef.nameAndTypeIndex];
+                }
+                case InterfaceMethodref -> {
+                    CpInfo.CpInterfaceMethodRef cpInterfaceMethodRef = (CpInfo.CpInterfaceMethodRef) cpInfo;
+                    cpInterfaceMethodRef.className = getUtf8(cpInterfaceMethodRef.classIndex);
+                    cpInterfaceMethodRef.nameAndType = (CpInfo.CpNameAndType) constantPool.cpInfo[cpInterfaceMethodRef.nameAndTypeIndex];
+                }
+                case NameAndType -> {
+                    CpInfo.CpNameAndType cpNameAndType = (CpInfo.CpNameAndType) cpInfo;
+                    cpNameAndType.name = getUtf8(cpNameAndType.nameIndex);
+                    cpNameAndType.descriptor = getUtf8(cpNameAndType.descriptorIndex);
+                }
+                case Dynamic -> {
+                    CpInfo.CpDynamic cpDynamic = (CpInfo.CpDynamic) cpInfo;
+                    // todo bootstrap index 没有
+                    cpDynamic.nameAndType = (CpInfo.CpNameAndType) constantPool.cpInfo[cpDynamic.nameAndTypeIndex];
+                }
+                case InvokeDynamic -> {
+                    CpInfo.CpInvokeDynamic cpInvokeDynamic = (CpInfo.CpInvokeDynamic) cpInfo;
+                    cpInvokeDynamic.nameAndType = (CpInfo.CpNameAndType) constantPool.cpInfo[cpInvokeDynamic.nameAndTypeIndex];
+                }
+                case Utf8 -> {
+                    CpInfo.CpUtf8 cpUtf8 = (CpInfo.CpUtf8) cpInfo;
+                    cpUtf8.value = new String(cpUtf8.bytes, StandardCharsets.UTF_8);
+                }
+                case MethodHandle -> {
+                    CpInfo.CpMethodHandle cpMethodHandle = (CpInfo.CpMethodHandle) cpInfo;
+                    CpInfo cpInfo1 = constantPool.cpInfo[cpMethodHandle.referenceIndex];
+                    switch (cpMethodHandle.referenceKind) {
+                        case 1, 2, 3, 4 -> cpMethodHandle.fieldRef = (CpInfo.CpFieldRef) cpInfo1;
+                        case 5, 8 -> cpMethodHandle.methodRef = (CpInfo.CpMethodRef) cpInfo1;
+                        case 6, 7 -> {
+                            if (cpInfo1 instanceof CpInfo.CpMethodRef cpMethodRef) {
+                                cpMethodHandle.methodRef = cpMethodRef;
+                            } else if (cpInfo1 instanceof CpInfo.CpInterfaceMethodRef interfaceMethodRef) {
+                                cpMethodHandle.interfaceMethodRef = interfaceMethodRef;
+                            } else {
+                                throw new IllegalArgumentException("constant pool at " + cpMethodHandle.referenceIndex + " must be method ref or interface method ref");
+                            }
+                        }
+                        case 9 -> cpMethodHandle.interfaceMethodRef = (CpInfo.CpInterfaceMethodRef) cpInfo1;
+                    }
+                }
+            }
+            ;
+        }
     }
 
     private void accessFlags() {
@@ -274,7 +356,9 @@ class ClassFormat {
                                 localVariable.startPc = readU2().getValue();
                                 localVariable.length = readU2().getValue();
                                 localVariable.nameIndex = readU2().getValue();
+                                localVariable.name = getUtf8(localVariable.nameIndex);
                                 localVariable.descriptorIndex = readU2().getValue();
+                                localVariable.descriptor = getUtf8(localVariable.descriptorIndex);
                                 localVariable.index = readU2().getValue();
                                 tmp.localVariableTable[i1] = localVariable;
                             }
@@ -291,7 +375,9 @@ class ClassFormat {
                                 localVariableType.startPc = readU2().getValue();
                                 localVariableType.length = readU2().getValue();
                                 localVariableType.nameIndex = readU2().getValue();
+                                localVariableType.name = getUtf8(localVariableType.nameIndex);
                                 localVariableType.signatureIndex = readU2().getValue();
+                                localVariableType.signature = getUtf8(localVariableType.signatureIndex);
                                 localVariableType.index = readU2().getValue();
                                 tmp.localVariableTypeTable[i1] = localVariableType;
                             }

@@ -1,5 +1,7 @@
 package com.xiaobin.core.java;
 
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,7 +10,8 @@ import java.util.Map;
 /**
  * created by xuweibin at 2025/1/6 13:36
  */
-class MethodInfo {
+@Getter
+public class MethodInfo {
 
     private static final int ACC_PUBLIC = 0x0001; // Declared public; may be accessed from outside its package.
     private static final int ACC_PRIVATE = 0x0002; // Declared private; accessible only within thedefining class and other classes belonging to the same nest (§5.4.4).
