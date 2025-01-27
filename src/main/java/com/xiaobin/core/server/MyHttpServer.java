@@ -11,13 +11,10 @@ import com.xiaobin.core.server.exception.HttpServerException;
 import com.xiaobin.core.server.model.HttpResponse;
 import com.xiaobin.core.server.model.RequestInfo;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -124,27 +121,14 @@ public class MyHttpServer {
             String result;
             HttpResponse<Object> response = HttpResponse.builder().build();
             if ("get".equalsIgnoreCase(exchange.getRequestMethod()) || "post".equalsIgnoreCase(exchange.getRequestMethod())) {
-//                MyHttpHandler<?> handler = requestHandConfig.getHandler(uriString, exchange.getRequestMethod());
                 RequestInfo handler = requestHandConfig.getHandler(uriString, exchange.getRequestMethod());
                 if (handler == null) {
                     response.setCode(0);
                     response.setMsg("Success");
                     response.setData("Hello World!");
                 } else {
-                    try (InputStream requestBody = exchange.getRequestBody()) {
-                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                        byte[] bytes = new byte[1024];
-                        int read;
-                        while ((read = requestBody.read(bytes)) > -1) {
-                            byteArrayOutputStream.write(bytes, 0, read);
-                        }
-                        Parameter[] parameters = handler.method().getParameters();
-                        Object[] params = new Object[parameters.length];
-                        JSON json = new JSON();
-                        for (int i = 0; i < parameters.length; i++) {
-                            params[i] = json.withSource(byteArrayOutputStream.toString(StandardCharsets.UTF_8)).readObject(parameters[i].getType());
-                        }
-                        Object value = handler.method().invoke(handler.instance(), params);
+                    try {
+                        Object value = new Resolver(exchange, handler);
                         response.setCode(0);
                         response.setMsg("Success");
                         response.setData(value);
