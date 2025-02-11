@@ -16,30 +16,34 @@ import java.util.Objects;
 /**
  * created by xuweibin at 2024/11/22 20:47
  */
-public class DaoServiceProxy implements InvocationHandler {
+public class SqlServiceProxy<T> implements InvocationHandler {
 
     private final SqlFactory sqlFactory;
     private final VersionData versionData;
+    private final Class<T> cls;
 
-    public DaoServiceProxy(String dbName, VersionData versionData) {
+    public SqlServiceProxy(String dbName, VersionData versionData, Class<T> cls) {
         this.sqlFactory = new SqlFactory(dbName);
         this.versionData = versionData;
+        this.cls = cls;
     }
 
-    public DaoServiceProxy(SqlFactory sqlFactory, VersionData versionData) {
+    public SqlServiceProxy(SqlFactory sqlFactory, VersionData versionData, Class<T> cls) {
         this.sqlFactory = sqlFactory;
         this.versionData = versionData;
+        this.cls = cls;
     }
 
-    public DaoService getService() {
-        return (DaoService) Proxy.newProxyInstance(DaoService.class.getClassLoader(), new Class[]{DaoService.class}, this);
+    @SuppressWarnings("unchecked")
+    public T getService() {
+        return (T) Proxy.newProxyInstance(cls.getClassLoader(), new Class[]{cls}, this);
     }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Objects.requireNonNull(args);
         SqlPara sqlPara = new SqlPara();
-        if (args[0] instanceof Class<?> cls) {
+        if (args[0] instanceof Class<?> innerCls) {
             StringBuilder keyBuilder = new StringBuilder();
             for (Object arg : args) {
                 if (arg != null) {
@@ -54,13 +58,13 @@ public class DaoServiceProxy implements InvocationHandler {
             if (data != null) {
                 return data;
             }
-            Entity entity = cls.getDeclaredAnnotation(Entity.class);
+            Entity entity = innerCls.getDeclaredAnnotation(Entity.class);
             if (entity != null) {
                 String tableName;
                 if (entity.tableName() != null) {
                     tableName = entity.tableName();
                 } else {
-                    tableName = cls.getName();
+                    tableName = innerCls.getName();
                     tableName = tableName.substring(0, 1).toLowerCase() + tableName.substring(1).replaceAll("[A-Z]", "_\1").toLowerCase();
                 }
                 sqlPara.setTableName(tableName);
@@ -105,7 +109,7 @@ public class DaoServiceProxy implements InvocationHandler {
                         }
                         params = params.substring(index + 3);
                     }
-                    List<?> list = this.sqlFactory.load(cls, sqlPara);
+                    List<?> list = this.sqlFactory.load(innerCls, sqlPara);
                     if (loadOne) {
                         if (list.size() == 1) {
                             data = list.get(0);
