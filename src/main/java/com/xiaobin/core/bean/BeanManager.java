@@ -2,6 +2,7 @@ package com.xiaobin.core.bean;
 
 import com.xiaobin.core.bean.annotation.XBean;
 import com.xiaobin.core.bean.model.BeanModel;
+import com.xiaobin.core.json.JSON;
 import com.xiaobin.core.json.exception.JSONParseException;
 import com.xiaobin.core.log.SysLogUtil;
 
@@ -70,7 +71,7 @@ public class BeanManager<T> {
         BeanModel beanModel = this.beanModelMap.get(fieldName);
         Objects.requireNonNull(beanModel, "unknown field name: " + fieldName);
         try {
-            beanModel.getSetMethod().invoke(t, this.convertValue(value, beanModel.getField().getType()));
+            beanModel.getSetMethod().invoke(t, convertValue(value, beanModel.getField().getType()));
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
@@ -88,7 +89,7 @@ public class BeanManager<T> {
         return null;
     }
 
-    private Object convertValue(Object value, Class<?> cls) {
+    public static Object convertValue(Object value, Class<?> cls) {
         if (value != null && cls != null) {
             if (value instanceof String string) {
                 // 数字
@@ -160,6 +161,16 @@ public class BeanManager<T> {
                     }
                 } catch (Exception e) {
                     throw new JSONParseException("convert enum string: " + string + " to " + cls + " error!");
+                }
+
+                JSON json = new JSON();
+                if (List.class.isAssignableFrom(cls)) {
+                    value = json.withSource(string).readList(cls);
+                } else if (Set.class.isAssignableFrom(cls)) {
+                    value = json.withSource(string).readList(cls);
+                    value = new HashSet<>((List<?>) value);
+                } else if (Map.class.isAssignableFrom(cls)) {
+                    value = json.withSource(string).readObject(cls);
                 }
             } else {
                 if (String.class.isAssignableFrom(cls)) {

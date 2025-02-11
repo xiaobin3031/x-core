@@ -136,6 +136,10 @@ public class SqlFactory {
         return 0;
     }
 
+    public int updateById(Object object) {
+        return updateById(object, null);
+    }
+
     public int updateById(Object object, SqlPara sqlPara) {
         Class<?> cls = object.getClass();
         Entity entity = this.checkEntity(cls);
@@ -168,6 +172,7 @@ public class SqlFactory {
                 }
                 try {
                     Object invoke = method.invoke(object);
+                    if(invoke == null) continue;
                     Id id = field.getDeclaredAnnotation(Id.class);
                     if (id != null) {
                         idValueList.add(invoke);

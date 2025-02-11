@@ -3,11 +3,13 @@ package com.xiaobin.core.server;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import com.xiaobin.core.bean.BeanManager;
 import com.xiaobin.core.json.JSON;
 import com.xiaobin.core.log.SysLogUtil;
 import com.xiaobin.core.server.config.Get;
 import com.xiaobin.core.server.config.Post;
 import com.xiaobin.core.server.config.Request;
+import com.xiaobin.core.server.config.RequestParam;
 import com.xiaobin.core.server.exception.HttpServerException;
 import com.xiaobin.core.server.model.HttpResponse;
 import com.xiaobin.core.server.model.RequestInfo;
@@ -20,6 +22,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.InetSocketAddress;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -37,13 +40,13 @@ public class MyHttpServer {
     private static final RequestHandConfig requestHandConfig = new RequestHandConfig();
     private final JSON json = new JSON();
 
-    public static void createServer(int port, Object... requestHandler){
+    public static void createServer(int port, Object... requestHandler) {
         registerHandler(requestHandler);
         createServer(port);
     }
 
-    private static void registerHandler(Object... requestHandlers){
-        if(requestHandlers == null || requestHandlers.length == 0){
+    private static void registerHandler(Object... requestHandlers) {
+        if (requestHandlers == null || requestHandlers.length == 0) {
             throw new HttpServerException("request handler is empty");
         }
 
@@ -52,7 +55,7 @@ public class MyHttpServer {
             Annotation[] annotations = aClass.getAnnotations();
             String prefixPath = "";
             for (Annotation annotation : annotations) {
-                if(annotation instanceof Request request){
+                if (annotation instanceof Request request) {
                     prefixPath = request.value();
                 }
             }
@@ -60,13 +63,13 @@ public class MyHttpServer {
             Method[] methods = aClass.getDeclaredMethods();
             for (Method method : methods) {
                 Get get = method.getAnnotation(Get.class);
-                if(get != null){
+                if (get != null) {
                     String path = get.value();
                     path = prefixPath + "/" + path;
                     requestHandConfig.defHandler(path, method, "get", requestHandler);
                 }
                 Post post = method.getAnnotation(Post.class);
-                if(post != null){
+                if (post != null) {
                     String path = post.value();
                     path = prefixPath + "/" + path;
                     requestHandConfig.defHandler(path, method, "post", requestHandler);
@@ -124,28 +127,59 @@ public class MyHttpServer {
             exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "*");
             String result;
             HttpResponse<Object> response = HttpResponse.builder().build();
-            try{
+            try {
                 if ("get".equalsIgnoreCase(exchange.getRequestMethod()) || "post".equalsIgnoreCase(exchange.getRequestMethod())) {
 //                MyHttpHandler<?> handler = requestHandConfig.getHandler(uriString, exchange.getRequestMethod());
-                    RequestInfo handler = requestHandConfig.getHandler(uriString, exchange.getRequestMethod());
+                    int index = uriString.indexOf("?");
+                    String path;
+                    if (index == -1) {
+                        path = uriString;
+                    } else {
+                        path = uriString.substring(0, index);
+                    }
+                    RequestInfo handler = requestHandConfig.getHandler(path, exchange.getRequestMethod());
                     if (handler == null) {
                         response.setCode(0);
                         response.setMsg("Success");
                         response.setData("Hello World!");
                     } else {
-                        try (InputStream requestBody = exchange.getRequestBody()) {
-                            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                            byte[] bytes = new byte[1024];
-                            int read;
-                            while ((read = requestBody.read(bytes)) > -1) {
-                                byteArrayOutputStream.write(bytes, 0, read);
+                        Parameter[] parameters = handler.method().getParameters();
+                        Object[] params = new Object[parameters.length];
+                        try {
+                            if ("get".equalsIgnoreCase(exchange.getRequestMethod())) {
+                                String query = exchange.getRequestURI().getQuery();
+                                if (query != null) {
+                                    Map<String, String> queryParams = new HashMap<>();
+                                    for (String s : query.split("&")) {
+                                        String[] split = s.split("=");
+                                        if (split[1] != null) {
+                                            String decode = URLDecoder.decode(split[1], StandardCharsets.UTF_8);
+                                            queryParams.put(split[0], decode);
+                                        }
+                                    }
+                                    for (int i = 0; i < parameters.length; i++) {
+                                        Parameter parameter = parameters[i];
+                                        RequestParam annotation = parameter.getAnnotation(RequestParam.class);
+                                        if (annotation != null && annotation.value() != null) {
+                                            params[i] = BeanManager.convertValue(queryParams.get(annotation.value()), parameter.getType());
+                                        }
+                                    }
+                                }
+                            } else {
+                                try (InputStream requestBody = exchange.getRequestBody()) {
+                                    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                                    byte[] bytes = new byte[1024];
+                                    int read;
+                                    while ((read = requestBody.read(bytes)) > -1) {
+                                        byteArrayOutputStream.write(bytes, 0, read);
+                                    }
+                                    JSON json = new JSON();
+                                    for (int i = 0; i < parameters.length; i++) {
+                                        params[i] = json.withSource(byteArrayOutputStream.toString(StandardCharsets.UTF_8)).readObject(parameters[i].getType());
+                                    }
+                                }
                             }
-                            Parameter[] parameters = handler.method().getParameters();
-                            Object[] params = new Object[parameters.length];
-                            JSON json = new JSON();
-                            for (int i = 0; i < parameters.length; i++) {
-                                params[i] = json.withSource(byteArrayOutputStream.toString(StandardCharsets.UTF_8)).readObject(parameters[i].getType());
-                            }
+
                             Object value = handler.method().invoke(handler.instance(), params);
                             response.setCode(0);
                             response.setMsg("Success");
@@ -159,10 +193,10 @@ public class MyHttpServer {
                 } else {
                     response.setMsg("Hello World!");
                 }
-            }catch(Exception e){
+            } catch (Exception e) {
                 response.setMsg(e.getMessage());
                 response.setCode(500);
-            }finally{
+            } finally {
                 JSON json = new JSON();
                 result = json.parse(response);
                 byte[] bytes = result.getBytes(StandardCharsets.UTF_8);
