@@ -28,6 +28,11 @@ public class SysLogUtil {
         System.out.println(buildRedText(msg));
     }
 
+    public static void logError(String msg, Throwable e) {
+        System.out.println(buildRedText(msg));
+        e.printStackTrace();
+    }
+
     public static void logWarn(String msg) {
         System.out.println(buildYellowText(msg));
     }
