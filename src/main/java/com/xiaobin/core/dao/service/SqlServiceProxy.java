@@ -4,6 +4,7 @@ import com.xiaobin.core.dao.SqlFactory;
 import com.xiaobin.core.dao.SqlPara;
 import com.xiaobin.core.dao.annotation.Entity;
 import com.xiaobin.core.data.VersionData;
+import lombok.Getter;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -18,6 +19,7 @@ import java.util.Objects;
  */
 public class SqlServiceProxy<T> implements InvocationHandler {
 
+    @Getter
     private final SqlFactory sqlFactory;
     private final VersionData versionData;
     private final Class<T> cls;
@@ -95,7 +97,7 @@ public class SqlServiceProxy<T> implements InvocationHandler {
                         } else {
                             param = params.substring(0, index);
                         }
-                        if (args[argIndex] != null) {
+                        if (argIndex < args.length && args[argIndex] != null) {
                             String column = param.substring(0, 1).toLowerCase() + param.substring(1).replaceAll("([A-Z])", "_$1").toLowerCase();
                             if (args[argIndex] instanceof Collection<?> list) {
                                 sqlPara.in(column, list);
@@ -113,7 +115,7 @@ public class SqlServiceProxy<T> implements InvocationHandler {
                     if (loadOne) {
                         if (list.size() == 1) {
                             data = list.get(0);
-                        } else if (!list.isEmpty()) {
+                        } else if (list.size() > 1) {
                             throw new RuntimeException("want one record, but get " + list.size());
                         }
                     } else {

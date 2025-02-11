@@ -60,7 +60,10 @@ public class SqlFactory {
     }
 
     private String getTableName(Class<?> cls, Entity entity, SqlPara sqlPara) {
-        String tableName = sqlPara.getTableName();
+        String tableName = null;
+        if (sqlPara != null) {
+            tableName = sqlPara.getTableName();
+        }
         if (tableName == null || tableName.trim().isEmpty()) {
             tableName = entity.tableName();
         }
@@ -140,7 +143,10 @@ public class SqlFactory {
         if (tableName.trim().isEmpty()) {
             throw new RuntimeException("table is empty");
         }
-        String schema = sqlPara.getSchema();
+        String schema = null;
+        if (sqlPara != null) {
+            schema = sqlPara.getSchema();
+        }
         if (schema == null || schema.trim().isEmpty()) {
             schema = entity.schema();
         }
@@ -213,6 +219,10 @@ public class SqlFactory {
         return 0;
     }
 
+    public <T> int save(T t) {
+        return this.save(t, null);
+    }
+
     public <T> int save(T t, SqlPara sqlPara) {
         Class<?> cls = t.getClass();
         Entity entity = this.checkEntity(cls);
@@ -220,7 +230,10 @@ public class SqlFactory {
         if (tableName.trim().isEmpty()) {
             throw new RuntimeException("table is empty");
         }
-        String schema = sqlPara.getSchema();
+        String schema = null;
+        if (sqlPara != null) {
+            schema = sqlPara.getSchema();
+        }
         if (schema == null || schema.trim().isEmpty()) {
             schema = entity.schema();
         }

@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.xiaobin.core.json.JSON;
+import com.xiaobin.core.log.SysLogUtil;
 import com.xiaobin.core.server.config.Get;
 import com.xiaobin.core.server.config.Post;
 import com.xiaobin.core.server.config.Request;
@@ -123,48 +124,55 @@ public class MyHttpServer {
             exchange.getResponseHeaders().set("Access-Control-Allow-Headers", "*");
             String result;
             HttpResponse<Object> response = HttpResponse.builder().build();
-            if ("get".equalsIgnoreCase(exchange.getRequestMethod()) || "post".equalsIgnoreCase(exchange.getRequestMethod())) {
+            try{
+                if ("get".equalsIgnoreCase(exchange.getRequestMethod()) || "post".equalsIgnoreCase(exchange.getRequestMethod())) {
 //                MyHttpHandler<?> handler = requestHandConfig.getHandler(uriString, exchange.getRequestMethod());
-                RequestInfo handler = requestHandConfig.getHandler(uriString, exchange.getRequestMethod());
-                if (handler == null) {
-                    response.setCode(0);
-                    response.setMsg("Success");
-                    response.setData("Hello World!");
-                } else {
-                    try (InputStream requestBody = exchange.getRequestBody()) {
-                        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                        byte[] bytes = new byte[1024];
-                        int read;
-                        while ((read = requestBody.read(bytes)) > -1) {
-                            byteArrayOutputStream.write(bytes, 0, read);
-                        }
-                        Parameter[] parameters = handler.method().getParameters();
-                        Object[] params = new Object[parameters.length];
-                        JSON json = new JSON();
-                        for (int i = 0; i < parameters.length; i++) {
-                            params[i] = json.withSource(byteArrayOutputStream.toString(StandardCharsets.UTF_8)).readObject(parameters[i].getType());
-                        }
-                        Object value = handler.method().invoke(handler.instance(), params);
+                    RequestInfo handler = requestHandConfig.getHandler(uriString, exchange.getRequestMethod());
+                    if (handler == null) {
                         response.setCode(0);
                         response.setMsg("Success");
-                        response.setData(value);
-                    } catch (Exception e) {
-                        response.setCode(-1);
-                        response.setMsg(e.getMessage());
+                        response.setData("Hello World!");
+                    } else {
+                        try (InputStream requestBody = exchange.getRequestBody()) {
+                            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                            byte[] bytes = new byte[1024];
+                            int read;
+                            while ((read = requestBody.read(bytes)) > -1) {
+                                byteArrayOutputStream.write(bytes, 0, read);
+                            }
+                            Parameter[] parameters = handler.method().getParameters();
+                            Object[] params = new Object[parameters.length];
+                            JSON json = new JSON();
+                            for (int i = 0; i < parameters.length; i++) {
+                                params[i] = json.withSource(byteArrayOutputStream.toString(StandardCharsets.UTF_8)).readObject(parameters[i].getType());
+                            }
+                            Object value = handler.method().invoke(handler.instance(), params);
+                            response.setCode(0);
+                            response.setMsg("Success");
+                            response.setData(value);
+                        } catch (Exception e) {
+                            SysLogUtil.logError(e.getMessage());
+                            response.setCode(-1);
+                            response.setMsg(e.getMessage());
+                        }
                     }
+                } else {
+                    response.setMsg("Hello World!");
                 }
-            } else {
-                response.setMsg("Hello World!");
+            }catch(Exception e){
+                response.setMsg(e.getMessage());
+                response.setCode(500);
+            }finally{
+                JSON json = new JSON();
+                result = json.parse(response);
+                byte[] bytes = result.getBytes(StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Length", String.valueOf(bytes.length));
+                exchange.sendResponseHeaders(200, 0);
+                OutputStream outputStream = exchange.getResponseBody();
+                outputStream.write(bytes);
+                outputStream.flush();
+                outputStream.close();
             }
-            JSON json = new JSON();
-            result = json.parse(response);
-            byte[] bytes = result.getBytes(StandardCharsets.UTF_8);
-            exchange.getResponseHeaders().set("Content-Length", String.valueOf(bytes.length));
-            exchange.sendResponseHeaders(200, 0);
-            OutputStream outputStream = exchange.getResponseBody();
-            outputStream.write(bytes);
-            outputStream.flush();
-            outputStream.close();
         }
     }
 }
