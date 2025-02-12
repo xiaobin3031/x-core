@@ -40,23 +40,27 @@ public class BeanManager<T> {
     private synchronized void loadBeanModel(Class<T> cls) {
         if (BEAN_MODEL_MAP.containsKey(cls.getName())) return;
 
-        Method[] methods = cls.getDeclaredMethods();
         List<BeanModel> list = new ArrayList<>();
-        for (Field field : cls.getDeclaredFields()) {
-            BeanModel model = new BeanModel();
-            model.setFieldName(field.getName());
-            model.setGetMethod(this.getGetMethod(field.getName(), methods));
-            model.setSetMethod(this.getSetMethod(field.getName(), methods));
-            model.setField(field);
+        Class<?> cc = cls;
+        while (cc != null && !cc.getSimpleName().equals("java.lang.Object")) {
+            Method[] methods = cc.getDeclaredMethods();
+            for (Field field : cc.getDeclaredFields()) {
+                BeanModel model = new BeanModel();
+                model.setFieldName(field.getName());
+                model.setGetMethod(this.getGetMethod(field.getName(), methods));
+                model.setSetMethod(this.getSetMethod(field.getName(), methods));
+                model.setField(field);
 
-            XBean xBean = field.getDeclaredAnnotation(XBean.class);
-            if (xBean != null) {
-                model.setDescription(xBean.description());
-                model.setDefaultValue(xBean.defaultValue());
-                model.setOptional(xBean.optional());
-                model.setIgnoreScene(xBean.ignoreScene());
+                XBean xBean = field.getDeclaredAnnotation(XBean.class);
+                if (xBean != null) {
+                    model.setDescription(xBean.description());
+                    model.setDefaultValue(xBean.defaultValue());
+                    model.setOptional(xBean.optional());
+                    model.setIgnoreScene(xBean.ignoreScene());
+                }
+                list.add(model);
             }
-            list.add(model);
+            cc = cc.getSuperclass();
         }
 
         BEAN_MODEL_MAP.put(cls.getName(), list);
@@ -77,7 +81,7 @@ public class BeanManager<T> {
         }
     }
 
-    public Object getVal(T t, String fieldName) {
+    public Object getVal(Object t, String fieldName) {
         BeanModel beanModel = this.beanModelMap.get(fieldName);
         if (beanModel != null && beanModel.getGetMethod() != null) {
             try {
@@ -87,6 +91,11 @@ public class BeanManager<T> {
             }
         }
         return null;
+    }
+
+    public Field getField(String fieldName) {
+        BeanModel beanModel = this.beanModelMap.get(fieldName);
+        return beanModel == null ? null : beanModel.getField();
     }
 
     public static Object convertValue(Object value, Class<?> cls) {

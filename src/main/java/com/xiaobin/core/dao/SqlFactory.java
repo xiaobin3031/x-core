@@ -7,10 +7,7 @@ import com.xiaobin.core.log.SysLogUtil;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -172,7 +169,7 @@ public class SqlFactory {
                 }
                 try {
                     Object invoke = method.invoke(object);
-                    if(invoke == null) continue;
+                    if (invoke == null) continue;
                     Id id = field.getDeclaredAnnotation(Id.class);
                     if (id != null) {
                         idValueList.add(invoke);
@@ -263,11 +260,13 @@ public class SqlFactory {
                 try {
                     Object invoke = method.invoke(t);
                     boolean isIdAuto = false;
-                    id = field.getDeclaredAnnotation(Id.class);
-                    if (id != null && id.type() == Id.IdType.AUTO) {
-                        idFieldName = name;
-                        idFieldType = field.getType();
-                        isIdAuto = true;
+                    if (id == null) {
+                        id = field.getDeclaredAnnotation(Id.class);
+                        if (id != null && id.type() == Id.IdType.AUTO) {
+                            idFieldName = name;
+                            idFieldType = field.getType();
+                            isIdAuto = true;
+                        }
                     }
                     if (invoke != null && !isIdAuto) {
                         valueList.add(invoke);
@@ -294,14 +293,14 @@ public class SqlFactory {
             stringBuilder.append(")");
             valueBuilder.setLength(valueBuilder.length() - 2);
             stringBuilder.append(" values(").append(valueBuilder).append(")");
-            ps = connection.prepareStatement(stringBuilder.toString());
+            ps = connection.prepareStatement(stringBuilder.toString(), Statement.RETURN_GENERATED_KEYS);
             this.setParam(ps, valueList, false);
             int i = ps.executeUpdate();
             if (i > 1) {
                 connection.rollback();
             } else {
                 if (idFieldName != null && id != null && id.type() == Id.IdType.AUTO) {
-                    Method method = this.getMethod("set" + idFieldName, cls);
+                    Method method = this.getMethod("set" + idFieldName, cls, idFieldType);
                     if (method != null) {
                         rs = ps.getGeneratedKeys();
                         if (rs.next()) {
@@ -317,7 +316,6 @@ public class SqlFactory {
             }
             return i;
         } catch (SQLException e) {
-            e.printStackTrace();
             System.err.println("load data error: " + e.getMessage());
             try {
                 connection.rollback();
@@ -338,9 +336,9 @@ public class SqlFactory {
         return entity;
     }
 
-    private Method getMethod(String methodName, Class<?> cls) {
+    private Method getMethod(String methodName, Class<?> cls, Class<?>... parameters) {
         try {
-            return cls.getDeclaredMethod(methodName);
+            return cls.getDeclaredMethod(methodName, parameters);
         } catch (NoSuchMethodException e) {
             return null;
         }
@@ -364,8 +362,10 @@ public class SqlFactory {
             name = name.substring(0, 1).toUpperCase() + name.substring(1);
             name = "set" + name;
             try {
-                Method method = cls.getDeclaredMethod(name, field.getType());
-                method.invoke(newT, resultSet.getObject(column, field.getType()));
+                Method method = getMethod(name, cls, field.getType());
+                if (method != null) {
+                    method.invoke(newT, resultSet.getObject(column, field.getType()));
+                }
             } catch (Exception e) {
 //                System.err.println(name + " error: " + e.getMessage());
             }

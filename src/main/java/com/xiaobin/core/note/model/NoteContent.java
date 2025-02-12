@@ -32,7 +32,19 @@ public class NoteContent {
 
     private Integer afterId;
 
+    private Integer beforeId;
+
     private LocalDateTime addTime;
+
+    private String heads;
+
+    private String orders;
+
+    private String types;
+
+    private Boolean updated;
+
+    private Long updateTime;
 
     private Boolean deleted;
 }

@@ -3,7 +3,6 @@ package com.xiaobin.core.json;
 import com.xiaobin.core.bean.BeanManager;
 import com.xiaobin.core.json.exception.JSONParseException;
 import com.xiaobin.core.json.exception.JSONUnExceptCharacterException;
-import com.xiaobin.core.json.model.FieldMethodModel;
 
 import java.io.*;
 import java.lang.reflect.*;
@@ -27,7 +26,6 @@ import java.util.*;
  */
 public class JSON {
 
-    private final static Map<String, Map<String, FieldMethodModel>> CLASS_FIELD_METHOD_MAP = new HashMap<>();
     private final static char COLON = ':';
     private final static char COMMA = ',';
     private final static char BEGIN_ARRAY = '[';
@@ -511,6 +509,7 @@ public class JSON {
         T t = null;
         Object value;
         b = this.read();
+        BeanManager<?> beanManager = new BeanManager<>(clazz);
         if (b != END_OBJECT) {
             // 空对象
             this.unread(b);
@@ -523,12 +522,7 @@ public class JSON {
 
                 // value
                 b = this.read();
-                Field field;
-                try {
-                    field = clazz.getDeclaredField(key);
-                } catch (NoSuchFieldException e) {
-                    field = null;
-                }
+                Field field = beanManager.getField(key);
                 if (b == COLON) {
                     this.skipWs();
                     value = this.readValue(field);
@@ -537,7 +531,8 @@ public class JSON {
                 }
 
                 if (field != null && value != null) {
-                    this.setObjectValue(t, clazz, field.getType(), key, value);
+                    beanManager.fillBean(t, key, value);
+//                    this.setObjectValue(t, clazz, field.getType(), key, value);
                 }
 
                 this.skipWs();
@@ -936,28 +931,6 @@ public class JSON {
         return b >= 0x20 && b <= 0x10ffff && b != DOUBLE_QUOTA;
     }
 
-//    private boolean isNumberElement(Class<?> cls) {
-//        return int.class.isAssignableFrom(cls) || Integer.class.isAssignableFrom(cls)
-//                || short.class.isAssignableFrom(cls) || Short.class.isAssignableFrom(cls)
-//                || byte.class.isAssignableFrom(cls) || Byte.class.isAssignableFrom(cls)
-//                || long.class.isAssignableFrom(cls) || Long.class.isAssignableFrom(cls)
-//                || double.class.isAssignableFrom(cls) || Double.class.isAssignableFrom(cls)
-//                || float.class.isAssignableFrom(cls) || Float.class.isAssignableFrom(cls)
-//                || boolean.class.isAssignableFrom(cls) || Boolean.class.isAssignableFrom(cls)
-//                || BigDecimal.class.isAssignableFrom(cls)
-//                || BigInteger.class.isAssignableFrom(cls);
-//    }
-
-    private <T> void setObjectValue(T t, Class<?> clazz, Class<?> fieldType, String fieldName, Object... value) {
-        try {
-            String methodName = "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
-            Method method = clazz.getDeclaredMethod(methodName, fieldType);
-            method.invoke(t, value);
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private <T> T getInstance(Class<T> clazz) {
         try {
             return clazz.getConstructor().newInstance();
@@ -974,50 +947,6 @@ public class JSON {
             return null;
         }
         return new String(this.chars, 0, this.charPos);
-    }
-
-    private Map<String, FieldMethodModel> loadFieldMethodCache(Class<?> cls) {
-        Map<String, FieldMethodModel> fieldMethodMap = CLASS_FIELD_METHOD_MAP.get(cls.getName());
-        if (fieldMethodMap == null) {
-            fieldMethodMap = this.syncLoadFieldMethodCache(cls);
-            CLASS_FIELD_METHOD_MAP.put(cls.getName(), fieldMethodMap);
-        }
-
-        return fieldMethodMap;
-    }
-
-    private synchronized Map<String, FieldMethodModel> syncLoadFieldMethodCache(Class<?> cls) {
-        Map<String, FieldMethodModel> fieldMethodMap = new HashMap<>();
-        Field[] fields = cls.getDeclaredFields();
-        Method setMethod, getMethod;
-        Method[] methods = cls.getDeclaredMethods();
-        Map<String, Method> methodMap = new HashMap<>();
-        for (Method method : methods) {
-            methodMap.put(method.getName(), method);
-        }
-        for (Field field : fields) {
-            if (!Modifier.isTransient(field.getModifiers())) {
-                String name = field.getName();
-                if (field.getName().length() == 1) {
-                    name = name.toUpperCase();
-                } else {
-                    name = name.substring(0, 1).toUpperCase() + name.substring(1);
-                }
-
-                setMethod = methodMap.getOrDefault("set" + name, methodMap.get(field.getName()));
-                getMethod = methodMap.getOrDefault("get" + name, methodMap.getOrDefault("is" + name, methodMap.get(field.getName())));
-                if (setMethod == null && getMethod == null) continue;
-
-                FieldMethodModel model = new FieldMethodModel();
-                model.setField(field);
-                model.setGetMethod(getMethod);
-                model.setSetMethod(setMethod);
-
-                fieldMethodMap.put(field.getName(), model);
-            }
-        }
-
-        return fieldMethodMap;
     }
 
     private void parseValue(Object value) {
@@ -1097,7 +1026,15 @@ public class JSON {
 
     private void insertRealStr(String str) {
         this.chars[this.charPos++] = DOUBLE_QUOTA;
-        this.insertStr(str);
+        for (int i = 0; i < str.length(); i++) {
+            char ch = str.charAt(i);
+            if(ch == '"'){
+                this.chars[this.charPos++] = '\\';
+                this.chars[this.charPos++] = '"';
+            }else{
+                this.chars[this.charPos++] = ch;
+            }
+        }
         this.chars[this.charPos++] = DOUBLE_QUOTA;
     }
 
@@ -1136,24 +1073,14 @@ public class JSON {
     private void parseObject(Object value) {
         this.chars[this.charPos++] = BEGIN_OBJECT;
         if (value != null) {
-            Map<String, FieldMethodModel> fieldMethodMap = this.loadFieldMethodCache(value.getClass());
-            if (!fieldMethodMap.isEmpty()) {
-                Object subVal;
-                for (Map.Entry<String, FieldMethodModel> entry : fieldMethodMap.entrySet()) {
-                    Method getMethod = entry.getValue().getGetMethod();
-                    if (getMethod != null) {
-                        try {
-                            subVal = getMethod.invoke(value);
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            continue;
-                        }
-                        if (subVal != null) {
-                            this.insertRealStr(entry.getKey());
-                            this.chars[this.charPos++] = COLON;
-                            this.parseValue(subVal);
-                            this.chars[this.charPos++] = COMMA;
-                        }
-                    }
+            BeanManager<?> beanManager = new BeanManager<>(value.getClass());
+            for (String s : beanManager.fieldsName()) {
+                Object val = beanManager.getVal(value, s);
+                if(val != null){
+                    this.insertRealStr(s);
+                    this.chars[this.charPos++] = COLON;
+                    this.parseValue(val);
+                    this.chars[this.charPos++] = COMMA;
                 }
             }
             if (this.chars[this.charPos - 1] == COMMA) {

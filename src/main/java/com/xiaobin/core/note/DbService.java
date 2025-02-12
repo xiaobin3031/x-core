@@ -1,5 +1,6 @@
 package com.xiaobin.core.note;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -12,4 +13,6 @@ public interface DbService {
     <T> T loadOneByIdAndDeleted(Class<T> cls, Object id, Boolean deleted);
 
     <T> List<T> loadByNoteIdAndDeleted(Class<T> cls, Object noteId, Boolean deleted);
+
+    <T> List<T> loadByContentIdAndDeleted(Class<T> cls, Collection<?> noteId, Boolean deleted);
 }

@@ -185,6 +185,7 @@ public class MyHttpServer {
                             response.setMsg("Success");
                             response.setData(value);
                         } catch (Exception e) {
+                            e.printStackTrace();
                             SysLogUtil.logError(e.getMessage());
                             response.setCode(-1);
                             response.setMsg(e.getMessage());
