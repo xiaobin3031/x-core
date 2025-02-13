@@ -15,4 +15,6 @@ public interface DbService {
     <T> List<T> loadByNoteIdAndDeleted(Class<T> cls, Object noteId, Boolean deleted);
 
     <T> List<T> loadByContentIdAndDeleted(Class<T> cls, Collection<?> noteId, Boolean deleted);
+
+    <T> List<T> loadByContentIdAndDeleted(Class<T> cls, Object noteId, Boolean deleted);
 }

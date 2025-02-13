@@ -1,5 +1,7 @@
 package com.xiaobin.core.note.dto;
 
+import com.xiaobin.core.note.model.NoteContent;
+import com.xiaobin.core.note.model.NoteTableDatas;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,11 +14,7 @@ import java.util.List;
 @Setter
 public class NoteTableDTO {
 
-    private Integer id;
+    private NoteContent noteContent;
 
-    private List<String> headers;
-
-    private List<Integer> orders;
-
-    private List<Integer> types;
+    private List<NoteTableDatas> datas;
 }
