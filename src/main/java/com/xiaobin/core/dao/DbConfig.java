@@ -1,5 +1,6 @@
 package com.xiaobin.core.dao;
 
+import com.xiaobin.core.data.BaseData;
 import com.xiaobin.core.json.JSON;
 import com.xiaobin.core.dao.model.DbConnModel;
 import com.xiaobin.core.log.SysLogUtil;
@@ -8,6 +9,7 @@ import java.io.*;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * created by xuweibin at 2024/11/20 10:33
@@ -28,7 +30,7 @@ public class DbConfig {
             throw new RuntimeException(e);
         }
 
-        File configFile = new File("E:\\文档\\db-config.txt");
+        File configFile = BaseData.getUserFile("db-config.txt");
         try (BufferedReader reader = new BufferedReader(new FileReader(configFile))) {
             String line;
             JSON json = new JSON();

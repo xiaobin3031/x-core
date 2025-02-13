@@ -1,6 +1,7 @@
 package com.xiaobin.core.data;
 
 import com.xiaobin.core.json.JSON;
+import com.xiaobin.core.log.SysLogUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,13 +25,7 @@ public class BaseData<T> {
 
     static {
 
-        String os = System.getenv("OS");
-        String path;
-        if (os != null && os.toLowerCase().contains("windows")) {
-            path = System.getenv("USERPROFILE");
-        } else {
-            path = System.getenv("HOME");
-        }
+        String path = getUserPath();
         path += File.separator + "datas-prop";
         ROOT_FOLD = new File(path);
         if (!ROOT_FOLD.exists()) {
@@ -38,6 +33,32 @@ public class BaseData<T> {
                 throw new RuntimeException("error create dirs: " + path);
             }
         }
+    }
+
+    private static String getUserPath() {
+        String os = System.getenv("OS");
+        String path;
+        if (os != null && os.toLowerCase().contains("windows")) {
+            path = System.getenv("USERPROFILE");
+        } else {
+            path = System.getenv("HOME");
+        }
+        SysLogUtil.logWarn("use path: " + path);
+        return path;
+    }
+
+    public static File getUserFile(String... filenames) {
+        String path = getUserPath();
+        File dir = new File(path);
+        for (int i = 0; i < filenames.length - 1; i++) {
+            dir = new File(dir, filenames[i]);
+            if (!dir.exists()) {
+                if (!dir.mkdir()) {
+                    throw new RuntimeException("fold create error, fold: " + dir.getAbsolutePath());
+                }
+            }
+        }
+        return new File(dir, filenames[filenames.length - 1]);
     }
 
     protected BaseData(boolean storeToFileFlag, String... filename) {
