@@ -1,5 +1,6 @@
 package com.xiaobin.core.java;
 
+import com.xiaobin.core.util.ByteReader;
 import lombok.Getter;
 
 import java.util.ArrayList;
