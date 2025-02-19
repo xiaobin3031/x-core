@@ -2,7 +2,7 @@ alter table note_content drop column table_id;
 
 alter table note_content add heads varchar(1000) null after after_id;
 
-alter table note_content add orders varchar(500) null after headers;
+alter table note_content add orders varchar(500) null after heads;
 
 alter table note_content add types varchar(500) null after orders;
 
