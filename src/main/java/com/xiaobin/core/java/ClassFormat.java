@@ -1,7 +1,8 @@
 package com.xiaobin.core.java;
 
-import com.xiaobin.core.java.model.U2;
-import com.xiaobin.core.java.model.U4;
+import com.xiaobin.core.model.U2;
+import com.xiaobin.core.model.U4;
+import com.xiaobin.core.util.ByteReader;
 import lombok.Getter;
 
 import java.nio.charset.StandardCharsets;

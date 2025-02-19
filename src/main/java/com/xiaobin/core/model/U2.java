@@ -1,4 +1,4 @@
-package com.xiaobin.core.java.model;
+package com.xiaobin.core.model;
 
 /**
  * created by xuweibin at 2025/1/6 17:19
