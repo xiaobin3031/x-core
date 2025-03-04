@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.InetSocketAddress;
@@ -186,9 +187,15 @@ public class MyHttpServer {
                             response.setData(value);
                         } catch (Exception e) {
                             e.printStackTrace();
-                            SysLogUtil.logError(e.getMessage());
+                            String errMsg;
+                            if(e instanceof InvocationTargetException ee){
+                                errMsg = ee.getTargetException().getMessage();
+                            }else{
+                                errMsg = e.getMessage();
+                            }
+                            SysLogUtil.logError(errMsg);
                             response.setCode(-1);
-                            response.setMsg(e.getMessage());
+                            response.setMsg(errMsg);
                         }
                     }
                 } else {
