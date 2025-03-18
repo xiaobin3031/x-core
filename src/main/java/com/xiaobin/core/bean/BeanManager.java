@@ -257,4 +257,40 @@ public class BeanManager<T> {
 
         return value.toString();
     }
+
+    /**
+     * 只匹配同类型的
+     */
+    public static boolean valueEqual(Object val1, Object val2) {
+        if (val1 == null && val2 == null) {
+            return true;
+        } else if (val1 == null || val2 == null) {
+            return false;
+        } else if (!isPrimary(val1) && !isPrimary(val2) && !val1.getClass().getName().equals(val2.getClass().getName())) {
+            return false;
+        } else {
+            if (isPrimary(val1)) {
+                return val1.toString().equals(val2.toString());
+            } else if (val1 instanceof Comparable cb1) {
+                return cb1.compareTo(val2) == 0;
+            } else if (val1.getClass().isPrimitive()) {
+                return val1 == val2;
+            } else {
+                return val1.equals(val2);
+            }
+        }
+    }
+
+    private static boolean isPrimary(Object val1) {
+        Class<?> aClass = val1.getClass();
+        return aClass.isPrimitive()
+                || aClass.isAssignableFrom(Integer.class)
+                || aClass.isAssignableFrom(Long.class)
+                || aClass.isAssignableFrom(Short.class)
+                || aClass.isAssignableFrom(Byte.class)
+                || aClass.isAssignableFrom(Character.class)
+                || aClass.isAssignableFrom(Double.class)
+                || aClass.isAssignableFrom(Float.class)
+                || aClass.isAssignableFrom(Boolean.class);
+    }
 }

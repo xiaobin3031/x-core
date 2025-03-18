@@ -34,7 +34,7 @@ public class MemoryData<T> extends BaseData<T> {
         }
     }
 
-    public List<T> removeAndGetAll() {
+    public List<T> getAndRemoveAll() {
         List<T> list = new ArrayList<>(this.datas);
         this.datas.clear();
         super.storeToFile(this.datas);

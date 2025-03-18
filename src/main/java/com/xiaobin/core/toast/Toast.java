@@ -74,6 +74,7 @@ public class Toast {
         JButton jCancelBtn = new JButton("Cancel");
         jCancelBtn.addActionListener(e -> {
             System.out.println("click cancel");
+            TOAST_MSG_TEXT_AREA.setText("");
             TOAST_FRAME.setVisible(false);
         });
         btnPanel.add(jCancelBtn);
