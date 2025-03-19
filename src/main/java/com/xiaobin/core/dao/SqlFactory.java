@@ -2,6 +2,7 @@ package com.xiaobin.core.dao;
 
 import com.xiaobin.core.dao.annotation.Entity;
 import com.xiaobin.core.dao.annotation.Id;
+import com.xiaobin.core.dao.model.PageInfo;
 import com.xiaobin.core.log.SysLogUtil;
 
 import java.lang.reflect.Field;
@@ -400,5 +401,11 @@ public class SqlFactory {
             DbConfig.stopTransaction();
         }
         return null;
+    }
+
+    public PageInfo loadPage(SqlPara sqlPara, Map<String, Object> params) {
+        PageInfo pageInfo = new PageInfo();
+
+        return pageInfo;
     }
 }
