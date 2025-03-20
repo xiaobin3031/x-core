@@ -4,6 +4,8 @@ import com.xiaobin.core.dao.SqlFactory;
 import com.xiaobin.core.dao.SqlPara;
 import com.xiaobin.core.dao.annotation.Entity;
 import com.xiaobin.core.data.VersionData;
+import com.xiaobin.core.json.JSON;
+import com.xiaobin.core.log.SysLogUtil;
 import lombok.Getter;
 
 import java.lang.reflect.InvocationHandler;
@@ -49,15 +51,17 @@ public class SqlServiceProxy<T> implements InvocationHandler {
             StringBuilder keyBuilder = new StringBuilder();
             for (Object arg : args) {
                 if (arg != null) {
-                    keyBuilder.append(arg).append(0x10);
+                    keyBuilder.append(arg).append("|x|");
                 }
             }
+            keyBuilder.append(method.getName());
             String key = keyBuilder.toString();
             Object data = null;
             if (this.versionData != null) {
                 data = this.versionData.getData(key);
             }
             if (data != null) {
+                SysLogUtil.logWarn("use cache: " + key + ": " + new JSON().parse(data));
                 return data;
             }
             Entity entity = innerCls.getDeclaredAnnotation(Entity.class);
@@ -72,7 +76,7 @@ public class SqlServiceProxy<T> implements InvocationHandler {
                 sqlPara.setTableName(tableName);
                 sqlPara.setSchema(entity.schema());
                 String methodName = method.getName();
-                if("loadByPIdAndDeleted".equals(methodName) && args.length >= 2 && args[1] instanceof Long arg1 && arg1 == 0){
+                if ("loadByPIdAndDeleted".equals(methodName) && args.length >= 2 && args[1] instanceof Long arg1 && arg1 == 0) {
                     // 先临时改一下
                     return Collections.emptyList();
                 }
@@ -110,6 +114,10 @@ public class SqlServiceProxy<T> implements InvocationHandler {
                             break;
                         }
                         params = params.substring(index + 3);
+                    }
+                    if (loadOne) {
+                        // 要求查1条，最多返回两条
+                        sqlPara.page(1, 2);
                     }
                     List<?> list = this.sqlFactory.load(innerCls, sqlPara);
                     if (loadOne) {

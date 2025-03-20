@@ -49,6 +49,7 @@ public class SqlFactory {
                 list.add(tt);
             }
         } catch (SQLException e) {
+            e.printStackTrace();
             System.err.println("load data error: " + e.getMessage());
         } finally {
             DbConfig.close(null, ps, rs);
@@ -318,6 +319,7 @@ public class SqlFactory {
             }
             return i;
         } catch (SQLException e) {
+            e.printStackTrace();
             System.err.println("load data error: " + e.getMessage());
             try {
                 connection.rollback();
