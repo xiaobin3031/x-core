@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Toast {
 
     private static JFrame TOAST_FRAME;
-    private static JTextArea TOAST_MSG_TEXT_AREA;
+    private static JPanel MSG_PANEL;
     private final static JLabel hourField = new JLabel();
     private final static JLabel minuteField = new JLabel();
     private final static JLabel secondField = new JLabel();
@@ -48,11 +48,10 @@ public class Toast {
 
         JPanel center = new JPanel();
         center.setLayout(new BorderLayout());
-        JTextArea msgTextArea = new JTextArea();
-        msgTextArea.setText("11111");
-        msgTextArea.setEditable(false);
-        JScrollPane msgPanel = new JScrollPane(msgTextArea);
-        center.add(msgPanel, BorderLayout.CENTER);
+        JPanel msgPanel = new JPanel();
+        GridLayout gridLayout = new GridLayout(100, 1);
+        msgPanel.setLayout(gridLayout);
+        center.add(new JScrollPane(msgPanel), BorderLayout.CENTER);
 
         JPanel btnPanel = initBtnPanel();
         center.add(btnPanel, BorderLayout.SOUTH);
@@ -60,7 +59,7 @@ public class Toast {
 
         JPanel toolBar = initToolbar();
         container.add(toolBar, BorderLayout.SOUTH);
-        TOAST_MSG_TEXT_AREA = msgTextArea;
+        MSG_PANEL = msgPanel;
         TOAST_FRAME = jFrame;
     }
 
@@ -68,13 +67,13 @@ public class Toast {
         JPanel btnPanel = new JPanel();
         JButton jClearBtn = new JButton("Clear");
         jClearBtn.addActionListener(e -> {
-            TOAST_MSG_TEXT_AREA.setText("");
+            MSG_PANEL.removeAll();
         });
         btnPanel.add(jClearBtn);
         JButton jCancelBtn = new JButton("Cancel");
         jCancelBtn.addActionListener(e -> {
             System.out.println("click cancel");
-            TOAST_MSG_TEXT_AREA.setText("");
+            MSG_PANEL.removeAll();
             TOAST_FRAME.setVisible(false);
         });
         btnPanel.add(jCancelBtn);
@@ -145,12 +144,9 @@ public class Toast {
     }
 
     public static void show(String message) {
-        if (TOAST_FRAME.isVisible()) {
-            String msg = TOAST_MSG_TEXT_AREA.getText();
-            msg += "\r\n" + formatMsg(message);
-            TOAST_MSG_TEXT_AREA.setText(msg);
-        } else {
-            TOAST_MSG_TEXT_AREA.setText(formatMsg(message));
+        JLabel jLabel = new JLabel(formatMsg(message));
+        MSG_PANEL.add(jLabel);
+        if (!TOAST_FRAME.isVisible()) {
             TOAST_FRAME.setVisible(true);
         }
         System.out.println("show message: " + message);
