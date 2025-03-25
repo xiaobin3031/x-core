@@ -297,4 +297,22 @@ public class BeanManager<T> {
                 || aClass.isAssignableFrom(Float.class)
                 || aClass.isAssignableFrom(Boolean.class);
     }
+
+    public Map<String, Object> toMap(Object val) {
+        Map<String, Object> result = new HashMap<>();
+        for (Map.Entry<String, BeanModel> entry : beanModelMap.entrySet()) {
+            Method getMethod = entry.getValue().getGetMethod();
+            if (getMethod != null) {
+                try {
+                    Object invoke = getMethod.invoke(val);
+                    if (invoke != null) {
+                        result.put(entry.getKey(), invoke);
+                    }
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    SysLogUtil.logError(entry.getKey() + " get value error:" + e.getMessage());
+                }
+            }
+        }
+        return result;
+    }
 }

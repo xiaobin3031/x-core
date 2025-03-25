@@ -31,6 +31,8 @@ public class Toast {
     private static int minute;
     private static int seconds;
 
+    private static int msgCount = 0;
+
     static {
         init();
 
@@ -49,9 +51,11 @@ public class Toast {
         JPanel center = new JPanel();
         center.setLayout(new BorderLayout());
         JPanel msgPanel = new JPanel();
-        GridLayout gridLayout = new GridLayout(100, 1);
+        GridLayout gridLayout = new GridLayout(20, 1);
         msgPanel.setLayout(gridLayout);
-        center.add(new JScrollPane(msgPanel), BorderLayout.CENTER);
+        JScrollPane jScrollPane = new JScrollPane(msgPanel);
+        jScrollPane.setAutoscrolls(true);
+        center.add(jScrollPane, BorderLayout.CENTER);
 
         JPanel btnPanel = initBtnPanel();
         center.add(btnPanel, BorderLayout.SOUTH);
@@ -67,13 +71,13 @@ public class Toast {
         JPanel btnPanel = new JPanel();
         JButton jClearBtn = new JButton("Clear");
         jClearBtn.addActionListener(e -> {
-            MSG_PANEL.removeAll();
+            clearMsgPanel();
         });
         btnPanel.add(jClearBtn);
         JButton jCancelBtn = new JButton("Cancel");
         jCancelBtn.addActionListener(e -> {
             System.out.println("click cancel");
-            MSG_PANEL.removeAll();
+            clearMsgPanel();
             TOAST_FRAME.setVisible(false);
         });
         btnPanel.add(jCancelBtn);
@@ -85,6 +89,11 @@ public class Toast {
         btnPanel.add(jOkBtn);
 
         return btnPanel;
+    }
+
+    private static void clearMsgPanel() {
+        MSG_PANEL.removeAll();
+        msgCount = 0;
     }
 
     private static JPanel initToolbar() {
@@ -144,8 +153,14 @@ public class Toast {
     }
 
     public static void show(String message) {
-        JLabel jLabel = new JLabel(formatMsg(message));
-        MSG_PANEL.add(jLabel);
+        GridLayout layout = (GridLayout) MSG_PANEL.getLayout();
+        if (layout.getRows() <= msgCount) {
+            layout.setRows(layout.getRows() + 10);
+        }
+        JTextArea jText = new JTextArea(formatMsg(message));
+        jText.setEditable(false);
+        MSG_PANEL.add(jText);
+        msgCount++;
         if (!TOAST_FRAME.isVisible()) {
             TOAST_FRAME.setVisible(true);
         }
