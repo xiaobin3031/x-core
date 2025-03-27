@@ -32,7 +32,7 @@ public class Scanner {
             case '[' -> addToken(TokenType.LEFT_SQUARE, "[");
             case ']' -> addToken(TokenType.RIGHT_SQUARE, "]");
             case '-' -> {
-                if (isDigit(peekNext())) {
+                if (isDigit(peek())) {
                     number();
                 } else {
                     addToken(TokenType.MINUS, "-");
@@ -120,6 +120,9 @@ public class Scanner {
 
     private void number() {
         char first = prev();
+        if (first == '-' || first == '+') {
+            first = peek();
+        }
         if (first != '0') {
             while (isDigit(peek())) advance();
         }

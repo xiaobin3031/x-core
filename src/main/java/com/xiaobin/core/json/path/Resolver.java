@@ -79,6 +79,12 @@ class Resolver {
         if (token.type == type) {
             return advance();
         }
+        System.out.println(tokenList.get(current - 3));
+        System.out.println(tokenList.get(current - 2));
+        System.out.println(tokenList.get(current - 1));
+        System.out.println(tokenList.get(current));
+        System.out.println(tokenList.get(current + 1));
+        System.out.println(tokenList.get(current + 2));
         throw new JSONParseException("require " + type + ", but get " + token.type);
     }
 

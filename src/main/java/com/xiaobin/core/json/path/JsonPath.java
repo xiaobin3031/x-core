@@ -7,19 +7,19 @@ import java.util.List;
  */
 public class JsonPath {
 
-    private final String source;
+    private final JsonValue topJsonValue;
 
     public JsonPath(String source) {
-        this.source = source;
+        Scanner scanner = new Scanner(source);
+        List<Token> tokens = scanner.scanToken();
+        Resolver resolver = new Resolver(tokens);
+        this.topJsonValue = resolver.resolve();
     }
 
     @SuppressWarnings("unchecked")
     public <T> T getByPath(String path, Class<T> cls) {
-        Scanner scanner = new Scanner(source);
-        List<Token> tokens = scanner.scanToken();
-        Resolver resolver = new Resolver(tokens);
-        JsonValue jsonValue = resolver.resolve();
-        if (jsonValue != null) {
+        if (topJsonValue != null) {
+            JsonValue jsonValue = this.topJsonValue;
             String[] paths = path.split("/");
             for (String s : paths) {
                 s = s.trim();

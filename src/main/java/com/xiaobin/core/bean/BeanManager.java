@@ -76,7 +76,7 @@ public class BeanManager<T> {
         Objects.requireNonNull(beanModel, "unknown field name: " + fieldName);
         try {
             beanModel.getSetMethod().invoke(t, convertValue(value, beanModel.getField().getType()));
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
             throw new RuntimeException(e);
         }
     }
@@ -112,10 +112,8 @@ public class BeanManager<T> {
                     } else if (long.class.isAssignableFrom(cls) || Long.class.isAssignableFrom(cls)) {
                         return Long.parseLong(string);
                     } else if (float.class.isAssignableFrom(cls) || Float.class.isAssignableFrom(cls)) {
-                        System.out.println("建议使用java.math.BigDecimal替换");
                         return Float.parseFloat(string);
                     } else if (double.class.isAssignableFrom(cls) || Double.class.isAssignableFrom(cls)) {
-                        System.out.println("建议使用java.math.BigDecimal替换");
                         return Double.parseDouble(string);
                     } else if (BigDecimal.class.isAssignableFrom(cls)) {
                         return new BigDecimal(string);
