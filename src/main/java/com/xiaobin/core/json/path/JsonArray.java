@@ -1,7 +1,5 @@
 package com.xiaobin.core.json.path;
 
-import lombok.Getter;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -10,12 +8,30 @@ import java.util.List;
  */
 class JsonArray extends JsonValue {
 
-    private final List<JsonValue> valueList = new ArrayList<>();
+    final List<JsonValue> valueList = new ArrayList<>();
 
-    @Getter
-    int size;
+    private int size;
+
+    int getSize() {
+        return size;
+    }
 
     void add(JsonValue value) {
         valueList.add(value);
+        size++;
+    }
+
+    @Override
+    public Object getValue(Class<?> cls) {
+        List<Object> list = new ArrayList<>();
+        if (size > 0) {
+            for (JsonValue jsonValue : valueList) {
+                Object value = jsonValue.getValue(cls);
+                if (value != null) {
+                    list.add(value);
+                }
+            }
+        }
+        return list;
     }
 }

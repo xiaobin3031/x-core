@@ -5,4 +5,5 @@ package com.xiaobin.core.json.path;
  */
 public abstract class JsonValue {
 
+    public abstract Object getValue(Class<?> cls);
 }

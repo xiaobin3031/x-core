@@ -11,17 +11,17 @@ class Resolver {
 
     private final List<Token> tokenList;
     private int current;
-    private JsonValue jsonValue;
 
     Resolver(List<Token> tokenList) {
         this.tokenList = tokenList;
     }
 
-    void resolve() {
-        jsonValue = resolveToken();
+    JsonValue resolve() {
+        JsonValue jsonValue = resolveToken();
         if (peek() != Token.EOF) {
             throw new JSONParseException("unexpect eof");
         }
+        return jsonValue;
     }
 
     private JsonValue resolveToken() {
@@ -33,7 +33,6 @@ class Resolver {
             case NUMBER -> new JsonNumber((String) token.value);
             case FALSE -> Constant.FALSE;
             case TRUE -> Constant.TRUE;
-            case NULL -> Constant.NULL;
             default -> null;
         };
     }
@@ -47,23 +46,30 @@ class Resolver {
             if (key.value != null) {
                 jsonObject.add(key.value.toString(), value);
             }
-            Token token = peek();
-            if (token.type != TokenType.RIGHT_BRACE && token.type != TokenType.COMMA) {
-                throw new JSONParseException("except token: } ,, but get " + token.type);
+            if (peek().type == TokenType.COMMA) {
+                advance();
             }
         }
+        if (isEnd()) {
+            throw new JSONParseException("unexpect end of object");
+        }
+        advance();
         return jsonObject;
     }
 
     private JsonArray jsonArray() {
         JsonArray jsonArray = new JsonArray();
-        int length = 0;
         while (!isEnd() && peek().type != TokenType.RIGHT_SQUARE) {
             JsonValue value = resolveToken();
-            jsonArray.add(value);
-            length++;
+            if (value != null) {
+                jsonArray.add(value);
+            }
+            if (peek().type == TokenType.COMMA) {
+                advance();
+            }
         }
-        jsonArray.size = length;
+        if (isEnd()) throw new JSONParseException("unexpect end of array");
+        advance();
         return jsonArray;
     }
 

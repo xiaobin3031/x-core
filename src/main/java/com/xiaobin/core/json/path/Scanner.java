@@ -22,7 +22,7 @@ public class Scanner {
         }
     }
 
-    void scan() {
+    private void scan() {
         char c = advance();
         switch (c) {
             case '{' -> addToken(TokenType.LEFT_BRACE, "{");
@@ -61,12 +61,13 @@ public class Scanner {
         }
     }
 
-    private void scanToken() {
+    List<Token> scanToken() {
         while (!isAtEnd()) {
             start = current;
             scan();
         }
         addToken(TokenType.EOF, null);
+        return tokenList;
     }
 
     private char advance() {
@@ -161,16 +162,5 @@ public class Scanner {
 
     private void addToken(TokenType type, Object value) {
         tokenList.add(new Token(type, value));
-    }
-
-    private void addToken(Token token) {
-        tokenList.add(token);
-    }
-
-    public static void main(String[] args) {
-        String string = "{\"orderType\":1,\"invoiceTime\":\"2025-03-26 10:11:49\",\"shipTime\":\"2025-03-26 10:18:16\",\"plazaCode\":\"0001\",\"returnFlag\":false,\"openboxFlag\":0,\"recordChannel\":\"WXX\",\"id\":20022418,\"consignee\":\"uAsEcudn2/cuTMMPo5/Jmw==\",\"shipCouponPrice\":0.00,\"orderJf\":0.00,\"cartId\":20004531,\"payMid\":\"1602459945\",\"outsystemFs\":false,\"shipExpireTime\":\"2025-03-26 13:13:03\",\"plazaFreightRate\":0.00,\"platformAmount\":0.00,\"salesUserId\":6053714,\"exportFlag\":false,\"brandId\":100218,\"goodsPrice\":0.06,\"salesShareDirect\":false,\"platformRefundAmount\":0.00,\"visibleFlag\":true,\"payOrderSn\":\"1000120250326285830079\",\"actualPrice\":0.06,\"promotionPrice\":0.00,\"orderSn\":\"1000120250326285830079\",\"latitude\":29.80908284505208,\"couponMallPrice\":0.00,\"shipChannel\":\"韵达快递\",\"recordNum\":1,\"salesAmount\":0.00,\"integralPrice\":0.00,\"shipId\":86,\"address\":\"pZVCNAqszGS4dGOXibOVSQFhNLmphWJ6IRjC6aDPRy7ERghgzzp4Pw6Xx2rB/RmsWx+8xvtsMRYL6ZT4GfiGGoX0U/HglL4SRWLO24r2yNZ+jMzos9Jhk0LulhT6iRsLqbOGV8CeLxPoL19mVDzKIg==\",\"updateTime\":\"2025-03-26 17:21:50\",\"userId\":7500474,\"payTotal\":0.06,\"recordTime\":\"2025-03-26 17:18:33\",\"deleted\":false,\"overTimeType\":1,\"endTime\":\"2025-03-26 17:21:51\",\"shipShopId\":0,\"shopFreightRate\":100.00,\"addTime\":\"2025-03-26 10:12:55\",\"payTime\":\"2025-03-26 10:13:02\",\"salesGoodsPrice\":0.00,\"salesPlazaCode\":\"0001\",\"salesFlag\":true,\"sourcePlazaCode\":\"0000\",\"recordFlag\":true,\"visibleChannel\":1,\"shopId\":1000043,\"cashPrice\":0.00,\"presellFlag\":false,\"freightPrice\":0.00,\"orderMark\":0,\"longitude\":121.54808648003473,\"shipSn\":\"YD455555543\",\"payExpireTime\":\"2025-03-26 10:27:56\",\"shipSource\":2,\"overShipCouponId\":18749,\"pId\":0,\"goodsType\":1,\"shipType\":2,\"payId\":\"4200002673202503262066491125\",\"payCode\":\"01\",\"payRequest\":\"\",\"acctSplitted\":1,\"partShipFlag\":true,\"shipPlazaCode\":\"\",\"userCid\":\"9900005875829\",\"orderStatus\":403,\"shipName\":\"测试接口\",\"presellFinishType\":0,\"aftersaleFlag\":2,\"sourceShopId\":1004218,\"vipPrice\":0.00,\"depositPrice\":0.00,\"orderPrice\":0.06,\"supportAftersaleType\":\"[2,1,3]\",\"orderSource\":\"WXX\",\"comments\":0,\"mobile\":\"lx8uczjzyOPKOF+nQWpUWw==\",\"payChannel\":\"WXPAY\",\"couponPrice\":0.00,\"refundApplyId\":0,\"aftersaleRealType\":0,\"aftersaleShipSource\":0}";
-        Scanner scanner = new Scanner(string);
-        scanner.scanToken();
-        System.out.println("====");
     }
 }
