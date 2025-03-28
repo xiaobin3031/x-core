@@ -3,7 +3,6 @@ package com.xiaobin.core.toast;
 import com.xiaobin.core.json.JSON;
 import com.xiaobin.core.log.SysLogUtil;
 import com.xiaobin.core.server.MyHttpHandler;
-import com.xiaobin.core.server.MyHttpServer;
 import com.xiaobin.core.toast.model.ToastModel;
 
 import javax.swing.*;
@@ -27,9 +26,9 @@ public class Toast {
     private static final int level_error = 200;
 
     private static final Map<Integer, String> levelMap = Map.of(
-            level_debug, "debug",
-            level_warn, "warn",
-            level_error, "error"
+            level_debug, "Debug",
+            level_warn, "Warn",
+            level_error, "Error"
     );
 
     private final static Toast instance = new Toast();
@@ -44,19 +43,31 @@ public class Toast {
 
     private final List<Integer> msgLevelList = new ArrayList<>();
     private final List<JTextArea> msgList = new ArrayList<>();
+    private final Map<Integer, Integer> levelCountMap = new HashMap<>();
 
     private int hour;
     private int minute;
     private int seconds;
-
     private int msgCount = 0;
+    private JCheckBox debugCheckBox;
+    private JCheckBox warnCheckBox;
+    private JCheckBox errorCheckBox;
 
-    static {
-        MyHttpServer.addContext("/notice", new ToastHttpHandle());
+    private Toast() {
+        init();
     }
 
-    private Toast(){
-        init();
+    private JCheckBox buildCheckBox(int level) {
+        JCheckBox checkBox = new JCheckBox(levelMap.get(level));
+        checkBox.addActionListener(e -> {
+            if (checkBox.isSelected()) {
+                curLevel.add(level);
+            } else {
+                curLevel.remove(level);
+            }
+            refreshMsgPanel();
+        });
+        return checkBox;
     }
 
     private void init() {
@@ -70,33 +81,9 @@ public class Toast {
 
         JPanel levelPanel = new JPanel();
         levelPanel.setLayout(new FlowLayout());
-        JCheckBox debugCheckBox = new JCheckBox("debug");
-        debugCheckBox.addActionListener(e -> {
-            if (debugCheckBox.isSelected()) {
-                curLevel.add(level_debug);
-            } else {
-                curLevel.remove(level_debug);
-            }
-            refreshMsgPanel();
-        });
-        JCheckBox warnCheckBox = new JCheckBox("warn");
-        warnCheckBox.addActionListener(e -> {
-            if (warnCheckBox.isSelected()) {
-                curLevel.add(level_warn);
-            } else {
-                curLevel.remove(level_warn);
-            }
-            refreshMsgPanel();
-        });
-        JCheckBox errorCheckBox = new JCheckBox("error");
-        errorCheckBox.addActionListener(e -> {
-            if (errorCheckBox.isSelected()) {
-                curLevel.add(level_error);
-            } else {
-                curLevel.remove(level_error);
-            }
-            refreshMsgPanel();
-        });
+        debugCheckBox = buildCheckBox(level_debug);
+        warnCheckBox = buildCheckBox(level_warn);
+        errorCheckBox = buildCheckBox(level_error);
         levelPanel.add(debugCheckBox);
         levelPanel.add(warnCheckBox);
         levelPanel.add(errorCheckBox);
@@ -150,12 +137,14 @@ public class Toast {
         JButton jClearBtn = new JButton("Clear");
         jClearBtn.addActionListener(e -> {
             clearMsgPanel();
+            clearAllMsg();
         });
         btnPanel.add(jClearBtn);
         JButton jCancelBtn = new JButton("Cancel");
         jCancelBtn.addActionListener(e -> {
             System.out.println("click cancel");
             clearMsgPanel();
+            clearAllMsg();
             TOAST_FRAME.setVisible(false);
         });
         btnPanel.add(jCancelBtn);
@@ -174,6 +163,16 @@ public class Toast {
             MSG_PANEL.remove(component);
         }
         msgCount = 0;
+    }
+
+    private void clearAllMsg() {
+        debugCheckBox.setText(levelMap.get(level_debug));
+        warnCheckBox.setText(levelMap.get(level_warn));
+        errorCheckBox.setText(levelMap.get(level_error));
+        curLevel.clear();
+        msgList.clear();
+        msgLevelList.clear();
+        levelCountMap.clear();
     }
 
     private JPanel initToolbar() {
@@ -254,6 +253,10 @@ public class Toast {
         jText.setEditable(false);
         msgLevelList.add(level);
         msgList.add(jText);
+        int count = levelCountMap.getOrDefault(level, 0);
+        count++;
+        levelCountMap.put(level, count);
+        refreshLevelCount(level, count);
         if (matchLevel(level)) {
             GridLayout layout = (GridLayout) MSG_PANEL.getLayout();
             if (layout.getRows() <= msgCount) {
@@ -265,7 +268,15 @@ public class Toast {
         if (!TOAST_FRAME.isVisible()) {
             TOAST_FRAME.setVisible(true);
         }
-        SysLogUtil.logNormalF("show message [%s]: %s", levelMap.get(level), message);
+        SysLogUtil.logNormalF("show message [%s]: %s\n", levelMap.get(level), message);
+    }
+
+    private void refreshLevelCount(int level, int count) {
+        switch (level) {
+            case level_debug -> debugCheckBox.setText(String.format("Debug: %d", count));
+            case level_warn -> warnCheckBox.setText(String.format("Warn: %d", count));
+            case level_error -> errorCheckBox.setText(String.format("Error: %d", count));
+        }
     }
 
     private String formatMsg(String msg) {
