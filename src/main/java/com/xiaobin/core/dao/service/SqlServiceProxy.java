@@ -4,8 +4,6 @@ import com.xiaobin.core.dao.SqlFactory;
 import com.xiaobin.core.dao.SqlPara;
 import com.xiaobin.core.dao.annotation.Entity;
 import com.xiaobin.core.data.VersionData;
-import com.xiaobin.core.json.JSON;
-import com.xiaobin.core.log.SysLogUtil;
 import lombok.Getter;
 
 import java.lang.reflect.InvocationHandler;
@@ -59,9 +57,12 @@ public class SqlServiceProxy<T> implements InvocationHandler {
             Object data = null;
             if (this.versionData != null) {
                 data = this.versionData.getData(key);
+                if (data == null && this.versionData.isNullKey(key)) {
+                    return null;
+                }
             }
             if (data != null) {
-                SysLogUtil.logWarn("use cache: " + key + ": " + new JSON().parse(data));
+//                SysLogUtil.logWarn("use cache: " + key + ": " + new JSON().parse(data));
                 return data;
             }
             Entity entity = innerCls.getDeclaredAnnotation(Entity.class);
@@ -129,7 +130,7 @@ public class SqlServiceProxy<T> implements InvocationHandler {
                     } else {
                         data = list;
                     }
-                    if (this.versionData != null && data != null) {
+                    if (this.versionData != null) {
                         this.versionData.setData(key, data);
                     }
                     return data;

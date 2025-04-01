@@ -1,7 +1,9 @@
 package com.xiaobin.core.data;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * created by xuweibin at 2024/12/17 13:07
@@ -15,6 +17,7 @@ public class VersionData {
     private static final Map<String, Map<String, VersionData>> VERSION_DATA_MAP = new HashMap<>();
 
     private final Map<String, Object> dataMap = new HashMap<>();
+    private final Set<String> nullKeySet = new HashSet<>();
 
     public static VersionData init(String versionKey, String version) {
         Map<String, VersionData> versionDataMap = VERSION_DATA_MAP.computeIfAbsent(versionKey, k -> new HashMap<>());
@@ -33,11 +36,19 @@ public class VersionData {
     }
 
     public void setData(String key, Object data) {
-        dataMap.put(key, data);
+        if (data == null) {
+            nullKeySet.add(key);
+        } else {
+            dataMap.put(key, data);
+        }
     }
 
     public Object getData(String key) {
         return dataMap.get(key);
+    }
+
+    public boolean isNullKey(String key) {
+        return nullKeySet.contains(key);
     }
 
     public void destroy() {

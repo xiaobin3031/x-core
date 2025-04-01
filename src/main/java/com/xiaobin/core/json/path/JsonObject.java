@@ -1,6 +1,7 @@
 package com.xiaobin.core.json.path;
 
 import com.xiaobin.core.bean.BeanManager;
+import com.xiaobin.core.json.exception.JSONParseException;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -33,9 +34,13 @@ class JsonObject extends JsonValue {
                         type = (Class<?>) parameterizedType.getActualTypeArguments()[0];
                     }
                 }
-                Object value = entry.getValue().getValue(type);
-                if (value != null) {
-                    beanManager.fillBean(val, entry.getKey(), value);
+                try {
+                    Object value = entry.getValue().getValue(type);
+                    if (value != null) {
+                        beanManager.fillBean(val, entry.getKey(), value);
+                    }
+                } catch (Exception e) {
+                    throw new JSONParseException("json key: " + entry.getKey() + ", " + e.getMessage());
                 }
             }
         }

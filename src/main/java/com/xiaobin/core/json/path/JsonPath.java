@@ -1,5 +1,8 @@
 package com.xiaobin.core.json.path;
 
+import com.xiaobin.core.json.exception.JSONParseException;
+import com.xiaobin.core.log.SysLogUtil;
+
 import java.util.List;
 
 /**
@@ -8,8 +11,10 @@ import java.util.List;
 public class JsonPath {
 
     private final JsonValue topJsonValue;
+    private final String source;
 
     public JsonPath(String source) {
+        this.source = source;
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanToken();
         Resolver resolver = new Resolver(tokens);
@@ -56,8 +61,13 @@ public class JsonPath {
                 }
             }
             if (jsonValue != null) {
-                Object value = jsonValue.getValue(cls);
-                return (T) value;
+                try {
+                    Object value = jsonValue.getValue(cls);
+                    return (T) value;
+                } catch (JSONParseException e) {
+                    SysLogUtil.logNormalLn("origin json string: " + this.source);
+                    throw e;
+                }
             }
         }
 
