@@ -6,6 +6,7 @@ import com.xiaobin.core.server.MyHttpHandler;
 import com.xiaobin.core.toast.model.ToastModel;
 
 import javax.swing.*;
+import javax.swing.text.*;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -247,10 +248,24 @@ public class Toast {
         instance.addToPane(level_error, message);
     }
 
+    private void setLogLevelStyle(Style style, int level) {
+        if (level == level_warn) {
+            StyleConstants.setForeground(style, Color.ORANGE);
+        } else if (level == level_error) {
+            StyleConstants.setForeground(style, Color.RED);
+        }
+    }
+
     private void addToPane(int level, String message) {
-        String s = formatMsg(level, message);
-        JTextArea jText = new JTextArea(s);
+        JTextArea jText = new JTextArea();
         jText.setEditable(false);
+        StyleContext styleContext = StyleContext.getDefaultStyleContext();
+        Style style = styleContext.getStyle(StyleContext.DEFAULT_STYLE);
+        Document doc = jText.getDocument();
+        insertString(doc, LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")), style);
+        setLogLevelStyle(style, level);
+        insertString(doc, " " + levelMap.get(level), style);
+        insertString(doc, " " + message, style);
         msgLevelList.add(level);
         msgList.add(jText);
         int count = levelCountMap.getOrDefault(level, 0);
@@ -269,6 +284,14 @@ public class Toast {
             TOAST_FRAME.setVisible(true);
         }
         SysLogUtil.logNormalF("show message [%s]: %s\n", levelMap.get(level), message);
+    }
+
+    private void insertString(Document doc, String msg, Style style) {
+        try {
+            doc.insertString(doc.getLength(), msg, style);
+        } catch (BadLocationException e) {
+            SysLogUtil.logError(e.getMessage());
+        }
     }
 
     private void refreshLevelCount(int level, int count) {
