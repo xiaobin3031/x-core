@@ -16,4 +16,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 public @interface Request {
 
     String value() default "";
+
+    String url() default "";
 }
