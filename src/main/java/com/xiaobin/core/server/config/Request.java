@@ -18,4 +18,6 @@ public @interface Request {
     String value() default "";
 
     String url() default "";
+
+    String execType() default "";
 }

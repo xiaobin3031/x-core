@@ -23,7 +23,7 @@ public class JsonPath {
 
     @SuppressWarnings("unchecked")
     public <T> T getByPath(String path, Class<T> cls) {
-        if (topJsonValue != null) {
+        if (path != null && !path.isEmpty() && topJsonValue != null) {
             JsonValue jsonValue = this.topJsonValue;
             String[] paths = path.split("/");
             for (String s : paths) {
