@@ -139,6 +139,7 @@ public class Toast {
         jClearBtn.addActionListener(e -> {
             clearMsgPanel();
             clearAllMsg();
+            refreshMsgPanel();
         });
         btnPanel.add(jClearBtn);
         JButton jCancelBtn = new JButton("Cancel");
