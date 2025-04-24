@@ -18,4 +18,6 @@ public @interface Get {
     String value();
 
     String jsonPath() default "";
+
+    Class<?> responseType() default Object.class;
 }

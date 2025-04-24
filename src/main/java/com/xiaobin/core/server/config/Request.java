@@ -20,4 +20,6 @@ public @interface Request {
     String url() default "";
 
     String execType() default "";
+
+    String contentPath() default "";
 }

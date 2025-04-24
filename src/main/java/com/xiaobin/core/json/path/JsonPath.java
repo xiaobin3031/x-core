@@ -74,4 +74,8 @@ public class JsonPath {
         return null;
     }
 
+    @Override
+    public String toString() {
+        return this.source;
+    }
 }

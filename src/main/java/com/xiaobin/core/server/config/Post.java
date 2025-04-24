@@ -18,4 +18,6 @@ public @interface Post {
     String value();
 
     String jsonPath() default "";
+
+    Class<?> responseType() default Object.class;
 }
