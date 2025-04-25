@@ -1,5 +1,7 @@
 package com.xiaobin.core.log;
 
+import com.xiaobin.core.toast.Toast;
+
 /**
  * created by xuweibin at 2024/7/25 16:24
  */
@@ -29,6 +31,7 @@ public class SysLogUtil {
     }
 
     public static void logError(String msg, Throwable e) {
+        Toast.showError(msg);
         System.out.println(buildRedText(msg));
         e.printStackTrace();
     }
